@@ -1,18 +1,9 @@
 [ 크래프터스 : \[알고쓰자\] Spring - 01 : Spring 의 시작 ]
 =======================================================================
 
--   대상독자
-
-    -   Spring 을 잘 모르시는 분
-
-    -   Spring 을 사용하고 있는 개발자
-
--   읽는 데 걸리는 시간
-
-    -   10분
-
-![image](https://github.com/user-attachments/assets/5bfbefcb-4eb7-4ae5-839c-81bd9fef37ad)
-
+<div align="center">   
+  <img src="https://github.com/user-attachments/assets/38ae7c1f-9724-4658-9ff2-2bd282c9bb47" width="800"/>  
+</div>
 
 Intro
 =====
