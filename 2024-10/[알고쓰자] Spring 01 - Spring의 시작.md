@@ -389,7 +389,10 @@ Reference
 <https://ko.wikipedia.org/wiki/%EA%B0%9D%EC%B2%B4_%EC%A7%80%ED%96%A5_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D>
 
 ------------
-
+<div align="center">
+    
 |Profile|Link|Bio|
 |--|--|--|
-||https://github.com/swj9707 |**"천천히, 하지만 꾸준히!"**|
+|<img src="https://github.com/user-attachments/assets/24d3f306-8014-41ae-98a3-a2f94bf6bdb9" width="100" height="100"/> | [github](https://github.com/swj9707) <br/> [LinkedIn](https://www.linkedin.com/in/woojin-son-18989b202/) |**"천천히, 하지만 꾸준히!"**|
+
+</div>
