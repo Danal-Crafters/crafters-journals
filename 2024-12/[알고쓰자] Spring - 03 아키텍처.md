@@ -1,7 +1,9 @@
 [ 크래프터스 : \[알고쓰자\] Spring - 03 아키텍처 ]
 ===============================================================
 
-![image](https://github.com/user-attachments/assets/cb489116-958c-4489-b575-d65b428143c5)
+<div align="center">   
+  <img src="https://github.com/user-attachments/assets/38ae7c1f-9724-4658-9ff2-2bd282c9bb47" width="800"/>  
+</div>
 
 Intro 
 =====
