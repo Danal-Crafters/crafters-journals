@@ -1,7 +1,9 @@
 [ 크래프터스 : \[알고쓰자\] Spring - 02 업데이트 내역과 함께하는 변천사 알아보기 ]
 ===============================================================================================
 
-![image](https://github.com/user-attachments/assets/38ae7c1f-9724-4658-9ff2-2bd282c9bb47)
+<div align="center">   
+  <img src="https://github.com/user-attachments/assets/38ae7c1f-9724-4658-9ff2-2bd282c9bb47" width="800"/>  
+</div>
 
 Intro 
 =====
