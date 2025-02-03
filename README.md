@@ -28,4 +28,5 @@ Pandoc은 HTML을 Markdown으로 변환할 수 있는 강력한 CLI 도구입니
     ```
 ## 기여자 가이드북 
 [기여자 가이드북](https://github.com/Danal-Crafters/crafters-journals/wiki/%EC%9B%94%EA%B0%84-%ED%81%AC%EB%9E%98%ED%94%84%ED%84%B0%EC%8A%A4-%EA%B8%B0%EC%97%AC%EC%9E%90-%EA%B0%80%EC%9D%B4%EB%93%9C%EB%B6%81)
+
 [이슈생성 방법](https://github.com/Danal-Crafters/crafters-journals/wiki/%EC%9B%94%EA%B0%84-%ED%81%AC%EB%9E%98%ED%94%84%ED%84%B0%EC%8A%A4-%EA%B8%B0%EC%97%AC-%EB%B0%A9%EB%B2%95)
