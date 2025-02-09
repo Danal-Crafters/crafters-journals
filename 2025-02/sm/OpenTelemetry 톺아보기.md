@@ -2,6 +2,8 @@
 
 최근, 사내 Observability 개선을 위한 Session을 진행했다.
 
+[발표 자료](https://youtu.be/opg7cx1TlYo)
+
 세션의 내용은 "왜 Observability가 중요한가?" 에 대한 내용이었는데,
 
 그 게시글에서 중요히 다뤘던 'Open-Telemetry는 무엇인가? 어떻게 해야하는가?' 에 대해서는 시간 관계 상 전달할 수 없었다.
@@ -53,7 +55,7 @@ ArgoCD, Containerd, cri-o, fluentd, HELM, Istio, Jaeger, KEDA, k8s, Prometheus
 
 머리아플 정도로 많은 것들이 보인다.
 
-### CNCF에서 인증받는다 것은 
+### CNCF에서 인증받는다는 것은 
 
 해당 프로젝트가 Cloud Native 표준을 준수하며 안정성과 신뢰성을 갖춘 오픈소스 프로젝트로 인정받았다는 뜻이다.
 
@@ -78,6 +80,9 @@ CNCF는 인증 대상 프로젝트를 Sandbox -> Incubating -> Graduated의 3단
 이번 글에서 소개할 Open-Telemetry는 Incubating 단계의 Project로, gRPC, cortex, Thanos, keycloak와 동일한 등급에 속해있다.
 
 # Open-Telemetry : 정의
+![opentelemetry-stacked-color.svg](img/opentelemetry-stacked-color.svg)
+
+### [Open-Telemetry](https://opentelemetry.io)
 
 흔히 O-Tel이라고 줄여 부르는 Open-Telemetry는 Observability 데이터를 수집하고 전송하는 오픈소스 프로젝트다.
 
