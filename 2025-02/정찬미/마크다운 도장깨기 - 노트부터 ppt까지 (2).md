@@ -1,7 +1,7 @@
 # 마크다운 도장깨기 - 노트부터 ppt까지 (2)
 
 안녕하세요,   
-돌아온 마크다운 짱팬 BE플랫폼개발팀 정찬미입니다.  
+돌아온 마크다운에 미친 자, 마크다운 열성팬 BE플랫폼개발팀 정찬미입니다.  
 지난 포스팅에서 소개해드린 마크다운, '백문이불여일타' 해보셨을까요?!  
 시도해보신 분, 해보려다 까먹으신 분, 이미 잘 알고 계신 분 모두 좋습니다.  
 
@@ -10,7 +10,7 @@
 그것이 바로 마프(`Marp`) 입니다.
 
 마프는 css를 커스텀해 테마로 사용할 수도 있습니다.   
-예시로 보여드리려고 다날 다크 테마를 만들어봤습니다.
+예시를 보여드리고자 다날 다크 테마를 만들어봤습니다.
 다날 테마 적용하는 방법도 소개할테니 끝까지 읽어주세요!
 
 ---
@@ -57,7 +57,8 @@ Marp팀에서는 VS Code 를 사용하는 걸 추천합니다.
 PowerPoint도 물론 좋은 툴이고, 확장성이 좋습니다. 저도 초등학생땐 마우스 피하기 게임
 만들고, 대학생때는 PowrPoint 템플릿 만든 나름 헤비유저였습니다.
 
-![](https://i.namu.wiki/i/mrzqLyow6lZ8uaGUSKIQ-t-5drkKc8c2tPsjeoW-N77hB8BRTmAjPp9gDlll0ocGqUOv6C5R2Iaa1JdGLo_KaA.webp)  
+![마우스피하기게임이미지](https://i.namu.wiki/i/fkKzYY88dAqVyTIXHTBO4yRpVZXK2u9voXNF8WkpyeqNAY8vIloKCQQOlU_pkm_zREzurvWrPyBcNRjVuNPqIY4pUeEc-CIcKNvaV3F14U6U3y7udwLEAH7g0YYxRSrg9zPVzJkZ1Q0VtC0zTu3uTA.webp) 
+
 
 그러나 PowerPoint는 기능이 많고 GUI 기반이라 수기 작업이 많습니다.  
 단축키와 다양한 기능을 자유자재로 사용하는 PPT 마스터가 되기까진 험난한 길이 있습니다.  
@@ -80,7 +81,10 @@ GitHub에서도 채택하고 있는 마크다운 문법입니다.
 
 일반적인 CommonMark에 더해, Marp가 추가로 제공하는 기능들입니다.
  
-- **슬라이드 구분**: 기본적으로 `---` 를 사용하여 새로운 슬라이드를 만들 수 있음 
+#### **슬라이드 구분**
+
+기본적으로 `---` 를 사용하여 새로운 슬라이드를 만들 수 있습니다.
+
   ```
   ---
   marp: true
@@ -90,12 +94,64 @@ GitHub에서도 채택하고 있는 마크다운 문법입니다.
   # 두번쨰 슬라이드
   ```
 
-- **배경 이미지 설정**:  bg로 슬라이드의 배경이미지와 위치, 크기를 설정할 수 있음
+####  **배경 이미지 설정**
+
+bg로 슬라이드의 배경이미지와 위치, 크기, 색상, 투명도등을 설정할 수 있습니다. 
+
   ```markdown
   ![bg left:50%](https://source.unsplash.com/random)
+  ![bg grayscale opacity](path/to/your/background-image.jpg](https://source.unsplash.com/random))
   ```
 
-- **수식**:  
+#### Mermaid 다이어그램
+
+Mermaid 다이어그램을 마프에서 사용하려면 `<div class="mermaid">` 태그를 활용하면 됩니다. 아래는 배경 이미지 설정 예시와 비슷한 느낌으로 Mermaid 다이어그램 예시를 추가한 것입니다.
+
+---
+
+### **Mermaid 다이어그램 추가**
+
+`<div class="mermaid">`을 사용하면 Marp에서도 Mermaid 다이어그램을 활용할 수 있습니다.
+
+```html
+<div class="mermaid">
+sequenceDiagram
+    participant PM/기획자
+    participant 개발자
+    participant QA
+    participant 사용자
+
+    PM/기획자->>개발자: 프로젝트 요구사항 전달
+    개발자->>PM/기획자: 요구사항 검토 및 협의
+    개발자->>개발자: 기능 개발 및 코드 작성
+    개발자->>QA: 기능 테스트 요청
+    QA-->>개발자: 테스트 피드백 전달
+    개발자->>사용자: 최종 배포
+    사용자-->>PM/기획자: 피드백 / 개선 요청
+</div>
+```
+
+위 코드를 적용하면 다음과 같은 다이어그램이 생성됩니다:
+
+```mermaid
+sequenceDiagram
+    participant PM/기획자
+    participant 개발자
+    participant QA
+    participant 사용자
+
+    PM/기획자->>개발자: 프로젝트 요구사항 전달
+    개발자->>PM/기획자: 요구사항 검토 및 협의
+    개발자->>개발자: 기능 개발 및 코드 작성
+    개발자->>QA: 기능 테스트 요청
+    QA-->>개발자: 테스트 피드백 전달
+    개발자->>사용자: 최종 배포
+    사용자-->>PM/기획자: 피드백 / 개선 요청
+```
+
+---
+
+#### **수식**
 
 ```
   ---
@@ -111,7 +167,8 @@ GitHub에서도 채택하고 있는 마크다운 문법입니다.
     ```markdown
     $$ E = mc^2 $$
     ```
-    
+
+--- 
 > 🔍  이렇듯 Marp는 단순히 마크다운을 PPT로 변환하는 기능만 있지 않습니다.
 **여러가지 유용한 기능이 추가된 발표용 마크다운**이라고 생각하시면 됩니다.
 
@@ -120,11 +177,14 @@ GitHub에서도 채택하고 있는 마크다운 문법입니다.
 
 Marp는 기본적으로 **3가지 공식 테마**를 제공합니다.  
 
+
+![테마 이미지](https://miro.medium.com/v2/resize:fit:1400/1*_jhW0iWkGPz_O467WBEwWA.png)
+
+
 1. **default (기본 테마)**  
    - 심플한 스타일로, 검은색 텍스트에 흰 배경을 사용  
    - 표준적인 슬라이드 느낌  
    - `theme: default`
-   
 
 
 2. **gaia**  
@@ -181,11 +241,19 @@ color: white
   
 ### 2.   테마 파일을 VS Code에 적용합니다.
 
-   - `Ctrl + Shift + P`(Mac은 `Command + Shift + P` )를 눌러 Command Palette를 열고, `Marp: Show Quick Pick Of Marp Commands...`을 검색합니다.
- - `Open Extension Settings`를 선택하고, `Marp: Themes`를 클릭합니다.
-- `Marp: Themes` 설정에서 `./danal_style.scss`를 추가로 기입합니다. (`./`는 현재 위치한 폴더를 의미합니다. )
+ 1. marp 파일 상단에서  삼각형 두개가 레이어링된 Marp Quick Command 버튼을 찾습니다. 
 
-### 3. 마크다운 파일에서 해당 테마를 적용합니다.
+![Marp Quick Command](./images/marp_commands.png)
+
+2.  `Open Extension Settings`를 선택하고, `Marp: Themes`를 클릭합니다.
+
+
+3.  `Marp: Themes` 설정에서 `./danal_style.scss`를 추가로 기입합니다. (`./`는 현재 위치한 폴더를 의미합니다. )
+
+![Marp Theme](./images/marp_theme.png)
+
+### 3. 마크다운 파일에서 해당 테마를 적용합니다.  
+
    ```
    ---
    marp: true
@@ -193,8 +261,10 @@ color: white
    ---
    ```
 
+![Custom CSS](./images/custom_css.png)
 
-이제 슬라이드 전체가 다날 스타일로 적용됩니다!
+이제 슬라이드 전체가 다날 스타일로 적용됩니다!   
+샘플 pdf를 첨부해두었으니 전체 결과물이 궁금하신 분은 참고해주세요.
 
 > 📌 **왜 Marp 테마는 SCSS를 사용할까요?**  
 > Marp의 테마는 일반 CSS가 아니라 **SCSS**(Sassy CSS)로 작성됩니다.  
@@ -205,7 +275,8 @@ color: white
 
 제가 직접 해보거나 들어본 사례들을 소개해드리겠습니다.
 
-### 기술 발표
+### 기술 발표  
+
 - 코드를 많이 포함하는 발표에 유용합니다.
 - GitHub에서 마크다운 문서로 작성하고 바로 발표할 수 있어 효율적입니다.
 
@@ -217,15 +288,16 @@ color: white
 - 수식 템플릿을 사용해 수학 학습지를 만든 사례도 있습니다. (유료)
 
 ### 팀 교육 자료
+
 -  팀 내에서 **교육자료**를 빠르게 공유하고 수정할 수 있습니다.
 - Git과 연동하면 **버전 관리**도 편리합니다.
 
 ---
 
-프리젠테이션 자료를 준비하는 일은 시간과 노력이 많이 들어가는 작업입니다.  
-이제 마프로 보다 가벼운 발표생활하시길 응원합니다.
+프리젠테이션 자료를 준비하는 일은 **시간과 노력**이 많이 들어가는 작업입니다.  
+이제 마프로 보다 효율적이고 가벼운 발표생활하시길 응원합니다.
 마크다운 시리즈는 2편으로 끝내려합니다.  
-사용하시다 궁금한 점이 있으면 언제든 물어봐주세요!
+사용하시다 궁금한 점이 생기면 언제든 물어봐주세요!
 
 ---
 
