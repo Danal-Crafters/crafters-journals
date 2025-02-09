@@ -1,0 +1,363 @@
+/* stylelint-disable no-descending-specificity -- https://github.com/stylelint/stylelint/issues/5065 */
+
+/*!
+ * Marp Danal Style Dark Theme.
+ *
+ * @theme danal_style
+ * @author Tina Jeong
+ *
+ * @auto-scaling  true
+ * @size 16:9 1280px 720px
+ * @size 4:3 960px 720px
+ */
+
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/variable/pretendardvariable.css");
+@use 'sass:meta';
+@include meta.load-css('pkg:github-markdown-css/github-markdown-dark.css');
+
+
+/* 글로벌 리셋 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 루트 변수 */
+:root {
+  --color-fg-default: #ffffff;
+  --color-canvas-default: #2a2a2a;
+  --color-primary: #007acc;
+  --color-secondary: #ff4500;
+  --color-accent: #6a5acd;
+  --color-success: #7fffd4;
+  --color-warning: #f2cc60;
+  --color-error: #ff7b72;
+  --color-info: #79c0ff;
+
+  --font-family-sans-serif: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --font-size-base: 1.5rem;
+  --font-size-large: 3rem;
+  --line-height-base: 1.6;
+  --spacing-base: 1rem;
+  --border-radius-small: 0.5rem;
+  --border-radius-full: 50%;
+  --color-code-bg: #1e1e1e;
+  --color-code-border: #444;
+  --transition-speed: 0.3s;
+}
+
+/* 인트로페이지용 스타일 */
+.cover-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 4rem);
+  text-align: center;
+  background-color: var(--color-canvas-default);
+  padding: 2rem;
+}
+
+.cover-slide h1 {
+  font-size: var(--font-size-large);
+  margin-bottom: calc(1.5 * var(--spacing-base));
+  color: #79c0ff; 
+}
+
+
+.cover-slide p {
+  font-size: var(--font-size-base);
+  margin-bottom: calc(var(--spacing-base) / 2);
+  color: var(--color-fg-default);
+}
+
+/* 기본 바디 스타일 */
+body {
+  background-color: var(--color-canvas-default);
+  color: var(--color-fg-default);
+  font-family: var(--font-family-sans-serif);
+  line-height: var(--line-height-base);
+  padding: var(--spacing-base);
+}
+
+/* 구분선 */
+hr {
+  height: 4px;
+  background: linear-gradient(135deg, var(--color-primary) 80%, var(--color-secondary) 20%);
+  border: none;
+  margin: var(--spacing-base) 0;
+  width: 100%;
+}
+
+/* 섹션 스타일 */
+section {
+  background-color: var(--color-canvas-default);
+  color: var(--color-fg-default);
+  padding: calc(2 * var(--spacing-base));
+  margin-bottom: var(--spacing-base);
+  text-align: left;
+}
+
+/* 제목 및 본문 */
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: var(--spacing-base);
+  line-height: 1.2;
+  color: var(--color-fg-default);
+}
+
+h1 {
+  font-size: var(--font-size-large);
+  font-weight: bold;
+}
+
+h2 {
+  font-size: calc(var(--font-size-base) * 1.7);
+  font-weight: bold;
+}
+
+h3 {
+  font-size: calc(var(--font-size-base) * 1.3) !important;
+  font-weight: bold;
+  margin-bottom: var(--spacing-base);  color: var(--color-fg-default);
+}
+
+p {
+  font-size: var(--font-size-base);
+  margin-bottom: var(--spacing-base);
+  text-align: justify;
+}
+
+/* 리스트 */
+/* 리스트 스타일 수정 */
+ul, ol {
+  font-size: var(--font-size-base);
+  list-style: none;
+  margin-bottom: var(--spacing-base);
+  padding-left: 0; /* ul의 기본 좌측 패딩 제거 */
+}
+
+ul li, ol li {
+  margin-bottom: calc(var(--spacing-base) / 2);
+  position: relative;
+  padding-left: calc(1.5 * var(--spacing-base)); /* 불릿과 텍스트 사이 간격 확보 */
+}
+
+ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  width: calc(var(--spacing-base) * 1); /* 불릿 영역의 폭, 필요에 따라 조정 */
+  text-align: right;
+  margin-right: calc(var(--spacing-base) / 2);
+  color: var(--color-primary);
+}
+
+
+/* 아이콘 */
+.infographic {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: calc(2 * var(--spacing-base));
+  gap: var(--spacing-base);
+}
+
+.icon {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-success));
+  border-radius: var(--border-radius-full);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: calc(var(--font-size-base) * 1.3);
+  font-weight: bold;
+  color: var(--color-canvas-default);
+  margin: 0 var(--spacing-base);
+  transition: transform var(--transition-speed);
+}
+
+/* 이스터에그 */
+.icon:hover {
+  transform: scale(1.05);
+}
+
+.text {
+  font-size: var(--font-size-base);
+  color: var(--color-fg-default);
+  text-align: center;
+}
+
+/* 수치 강조 */
+.number-highlight {
+  font-size: 4rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  margin: var(--spacing-base) 0;
+  text-align: center;
+}
+
+.number-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.number-description {
+  font-size: var(--font-size-base);
+  color: var(--color-fg-default);
+  margin-top: calc(var(--spacing-base) / 2);
+  text-align: center;
+}
+
+/* 테이블 스타일 수정: 폭 조절 및 폰트 확대 */
+table {
+  width: auto;
+  max-width: 90%;
+  margin: var(--spacing-base) auto;
+  font-size: 1.25rem;
+  border-collapse: collapse;
+  margin-bottom: var(--spacing-base);
+}
+
+table th,
+table td {
+  border: 1px solid var(--color-code-border);
+  padding: calc(var(--spacing-base) / 2);
+  text-align: left;
+}
+
+table th {
+  background-color: #333;
+  color: var(--color-fg-default);
+  font-weight: bold;
+}
+
+table td {
+  background-color: #2c2c2c;
+  color: var(--color-fg-default);
+}
+
+/* --- 코드 블록 --- */
+/* GitHub Flavored Dark Syntax Highlighting */
+pre {
+  display: block;
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-code-border);
+  padding: calc(var(--spacing-base) / 2);
+  border-radius: var(--border-radius-small);
+  overflow-x: auto;
+  margin-bottom: var(--spacing-base);
+  font-size: var(--font-size-base);
+}
+
+pre code {
+  display: block;
+  white-space: pre;
+  background: transparent;
+  color: var(--color-fg-default);
+  font-size: inherit;
+}
+
+.hljs {
+  background: #0d1117 !important;
+  color: #c9d1d9 !important;
+  padding: 1em;
+  overflow-x: auto;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #8b949e !important;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type,
+.hljs-addition {
+  color: var(--color-error) !important;
+}
+
+.hljs-string,
+.hljs-meta,
+.hljs-regexp,
+.hljs-deletion {
+  color: var(--color-info) !important;
+}
+
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--color-warning) !important;
+}
+
+.hljs-title,
+.hljs-section {
+  color: var(--color-primary) !important;
+  font-weight: bold !important;
+}
+
+.hljs-emphasis {
+  font-style: italic !important;
+}
+
+.hljs-strong {
+  font-weight: bold !important;
+}
+
+/* 이미지 스타일 */
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-small);
+  margin-bottom: var(--spacing-base);
+}
+
+/* 인용문 스타일 */
+blockquote {
+  border-left: 4px solid var(--color-primary);
+  padding-left: var(--spacing-base);
+  margin: var(--spacing-base) 0;
+  color: var(--color-fg-default);
+  font-style: italic;
+}
+
+/* 링크 스타일 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-speed);
+}
+
+a:hover {
+  color: var(--color-secondary);
+}
+
+/* 버튼 스타일 (Marp에서는 사용되지 않지만, 기본 테마에 포함될 수 있음) */
+button {
+  background-color: var(--color-primary);
+  color: var(--color-fg-default);
+  border: none;
+  padding: calc(var(--spacing-base) / 2) var(--spacing-base);
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+}
+
+button:hover {
+  background-color: var(--color-secondary);
+}
