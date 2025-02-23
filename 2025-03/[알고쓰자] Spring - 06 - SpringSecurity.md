@@ -189,9 +189,18 @@ Spring Security 는 엄밀히 말하자면 Spring 에 포함 되어있는 모듈
 
 하지만 Spring 내의 Bean 들을 Servlet 영역에서 사용할 수 있도록 도와주는 역할을 합니다. DelegatingFilterProxy 를 통해서 말이죠. 
 
-[FilterChain 이미지]()
+<p align="center">
+    <img src="https://github.com/user-attachments/assets/571271fb-7f86-4644-bc0a-328ce849dbc8" width="30%" />
+    <img src="https://github.com/user-attachments/assets/ecd92b4c-8928-40e2-b357-ec1ed0fc7b30" width="50%" />
+</p>
 
 Spring 의 FilterChain 은 웹 애플리케이션에서 들어오는 요청과 나가는 응답을 여러 단계의 필터를 통해 처리하도록 도와줍니다. 우리가 FilterChain 에 커스텀 Filter 를 넣을 수도 있죠. 
+
+![image](https://github.com/user-attachments/assets/7b982a78-684f-4273-b048-f24271ac9c72)
+
+FilterChain 은 Spring 의 IOC 가 직접적으로 관여하는 영역은 아닙니다. 그러므로 Spring 의 Bean 들이 직접 IoC 될 수는 없습니다. 하지만 DelegatingFilterProxy 가 있다면, 얘기는 다릅니다. 해당 FilterProxy 는 요청을 가로채서 Spring Container 영역으로 요청을 가져오는 역할을 합니다. 
+
+![image](https://github.com/user-attachments/assets/d3eff6e9-b70c-4d8f-87ae-a93ad1e2e837)
 
 Spring Security 를 설정하면 이 FilterChain 영역에 DelegatingFilterProxy 를 통해 Security 의 FilterChainProxy 를 연결 시킵니다. 해당 FilterChainProxy 를 통해 실제로는 외부에 배치 되어있는 SecurityFilterChain 이 마치 FilterChain 내에 존재하는 것 처럼 사용할 수 있습니다. 
 
@@ -199,7 +208,8 @@ DelegatingFilterProxy 를 통해 FilterChain 에서 SecurityFilterChain 으로 �
 
 이를 통해 우리가 원하는 Filter 를 FilterChain 내에 커스텀할 수 있습니다. 
 
-[SecurityFilterChain 이미지]()
+![image](https://github.com/user-attachments/assets/a93957ab-a953-469d-8fc2-f9d00ffcc388)
+
 
 Security FilterChain 은 11개 의 기본 필터로 이뤄 져 있습니다. 이 필터들 각각이 본인의 역할들을 수행합니다. 그림에서는 필터 각각이 각자의 역할을 수행해야 할 때 호출하는 객체들을 화살표로 이어 보았습니다. 
 
