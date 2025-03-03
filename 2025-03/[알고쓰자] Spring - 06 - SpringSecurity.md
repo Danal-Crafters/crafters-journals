@@ -237,7 +237,7 @@ fun filterChain(http : HttpSecurity) : SecurityFilterChain {
 저는 이 문제를 동작과정을 살펴봄으로써 해결 했습니다. 
 
 
-# Spring Security 동작 과정
+# 🧐 Spring Security 동작 과정
 
 우선 모든 요청은 FilterChain 을 통해서 전달 됩니다. FilterChain 에서 DelegatingFilterProxy 의 영역으로 요청이 전달되면, SecurityFilterChain 이 요청을 가로채서 각 Filter 들에게 요청을 보냅니다. 
 
@@ -357,7 +357,7 @@ class ForwardingController {
 http.addFilterBefore(JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter::class.java)
 ```
 
-# FilterChain 내에서의 예외 처리
+# 😕 FilterChain 내에서의 예외 처리
 
 만약 필터 단에서 `Exception` 이 발생할 경우는 어떻게 될까요? 이 경우에는 따로 핸들링 해 주어야 합니다. 필터 레이어 상에서 나올 수 있는 예외를 처리해주는 컴포넌트가 존재합니다. `AuthenticationEntryPoint` 죠. 
 
@@ -446,7 +446,7 @@ fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
 }
 ```
 
-# Spring Security 가 지원하는 인증 방식들
+# 🔒 Spring Security 가 지원하는 인증 방식들
 
 가장 대표적으로는 Form-Based Authentication(Form 기반 인증) 입니다. 전통적인 HTML 로그인 Form 을 사용하여 사용자를 인증하죠. 
 
@@ -662,7 +662,7 @@ class ApiKeyFilter : OncePerRequestFilter() {
 |API Key|특정 클라이언트만 인증|마이크로서비스, API|
 
 
-# Outro
+# 😊 Outro
 
 Spring Security 는 다양한 인증 방식을 제공하는 라이브러리입니다. 하지만, 만약 우리가 인증서버를 따로 분리한 경우가 아니라면, Spring Security 내에 선언 해 둔 FilterChain 들이 복잡하게 엮이는 경우가 반드시 생깁니다.  
 
@@ -676,6 +676,6 @@ Spring Security 는 다양한 인증 방식을 제공하는 라이브러리입�
 
 다음 알고쓰자 Spring 의 주제는 Auto Configuration 입니다. 기대해주세요 🤟.
 
-# Reference
+# 📘 Reference
 
 - [https://spring.io/projects/spring-security](https://spring.io/projects/spring-security)
