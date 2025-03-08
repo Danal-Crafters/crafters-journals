@@ -328,7 +328,7 @@ GC의 대상이 되는 곳이죠.
 * enum타입
 
 java 8버전 부터 이전버전과 다르게 구조가 변경되었습니다.  
-![heap구조](img/heap%20구조.png)
+![heap구조](img/heap구조.png)
 
 ### young generation
 * eden
