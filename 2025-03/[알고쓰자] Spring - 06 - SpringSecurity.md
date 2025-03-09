@@ -548,6 +548,7 @@ class SecurityConfig {
 ```
 
 만약 조직에서 LDAP 디렉토리를 사용하고 있다면, `LdapAuthenticationProvider` 를 사용하면 됩니다. 
+> 여기서 LDAP(Lightweight Directory Access Protocol) 이란, 디렉토리에 데이터를 저장하고 사용자가 디렉토리에 엑세스 할 수 있도록 인증할 때 사용합니다. 
 
 ```kotlin
 @Configuration
