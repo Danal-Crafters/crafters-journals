@@ -152,6 +152,7 @@ WebAuthn4j Spring Security 는 기존의 Spring Security 에 에드온을 추가
 ## 예제 프로젝트
 
 간단하게 WebAuthn4j 를 통해 Spring Boot 와 React 를 결합한 인증 앱을 개발 해 보겠습니다. 
+WebAuthn4j-core 0.28.6 버전 기준으로 작성합니다. 
 
 ### Backend
 ```kotlin
@@ -159,17 +160,31 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("com.webauthn4j:webauthn4j-core:0.17.0.RELEASE") // 최신 버전 확인 필요
+    implementation("com.webauthn4j:webauthn4j-core:0.28.6.RELEASE") 
 }
 ```
 먼저 WebAuthn4j 를 우리의 Spring Boot 프로젝트에 셋업 합니다. 
 
+```shell
+src/
+├── controller/
+│   └── WebAuthnController.kt
+├── dto/
+│   ├── RegistrationFinishRequest.kt
+│   └── AssertionFinishRequest.kt
+├── store/
+│   ├── ChallengeService.kt
+│   └── UserStorage.kt
+```
+테스트 프로젝트의 구조는 아래와 같습니다. 간단하게 작성 해 보았어요. 
+
 ```kotlin
 @Configuration
 @EnableWebSecurity
-class SecurityConfig : WebSecurityConfigurerAdapter() {
+class SecurityConfig {
 
-    override fun configure(http: HttpSecurity) {
+    @Bean
+    fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.csrf().disable()
             .authorizeRequests()
             .antMatchers("/api/webauthn/**").permitAll()
@@ -180,121 +195,169 @@ class SecurityConfig : WebSecurityConfigurerAdapter() {
 다음으로 Spring Security filterChain 셋업을 합니다. WebAuthn 요청 외에 모든 요청들에 대해 Authenticated 옵션을 줍니다. 
 
 ```kotlin
-@Configuration
-class WebAuthnConfig {
+package com.example.dto
 
-    @Bean
-    fun relyingPartyIdentity(): RelyingPartyIdentity {
-        return RelyingPartyIdentity.builder()
-            .id("localhost")
-            .name("My WebAuthn App")
-            .build()
+data class RegistrationFinishRequest(
+    val username: String,
+    val id: ByteArray,
+    val rawId: ByteArray,
+    val type: String,
+    val response: AttestationResponse
+)
+
+data class AttestationResponse(
+    val clientDataJSON: ByteArray,
+    val attestationObject: ByteArray
+)
+```
+```kotlin
+package com.example.dto
+
+data class AssertionFinishRequest(
+    val username: String,
+    val id: ByteArray,
+    val rawId: ByteArray,
+    val response: AssertionResponse,
+    val type: String,
+    val clientExtensionResults: Map<String, Any>? = null
+)
+
+data class AssertionResponse(
+    val clientDataJSON: ByteArray,
+    val authenticatorData: ByteArray,
+    val signature: ByteArray,
+    val userHandle: ByteArray? = null
+)
+```
+먼저 DTO (VO) 입니다. 등록, 그리고 인증에 사용되는 요청 응답 정보들입니다. 
+
+```kotlin
+package com.example.store
+
+import com.webauthn4j.data.attestation.authenticator.Authenticator
+import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
+
+@Component
+class UserStorage {
+    private val map = ConcurrentHashMap<String, Authenticator>()
+
+    fun save(username: String, authenticator: Authenticator) {
+        map[username] = authenticator
+    }
+
+    fun get(username: String): Authenticator? {
+        return map[username]
     }
 }
 ```
-이번 예시에서는 API 서버가 RP 서버 역할 또한 할 예정이므로 `WebAuthnConfig` 또한 작성 합니다. 
+원래대로라면 JPA Repository 를 연동하는 등 직접 DB 와 연동해야겠지만, 예시 프로젝트에서는 인메모리를 사용합니다. 
 
 ```kotlin
-import com.webauthn4j.authenticator.Authenticator
+package com.example.store
+
+import com.webauthn4j.data.client.challenge.Challenge
+import com.webauthn4j.data.client.challenge.DefaultChallenge
+import org.springframework.stereotype.Service
+import java.util.concurrent.ConcurrentHashMap
+
+@Service
+class ChallengeService {
+    private val challengeMap = ConcurrentHashMap<String, Challenge>()
+
+    fun generate(username: String): Challenge {
+        val challenge = DefaultChallenge()
+        challengeMap[username] = challenge
+        return challenge
+    }
+
+    fun get(username: String): Challenge? = challengeMap[username]
+
+    fun clear(username: String) {
+        challengeMap.remove(username)
+    }
+}
+```
+다음으로 ChallengeService 입니다. 유저마다 할당 된 Challenge 값을 저장하고 관리할 수 있는 컴포넌트입니다.  
+이 Challenge 값 또한 제대로 구성하려면 DB로 구성해야 합니다. 
+
+
+```kotlin
+package com.example.controller
+
+import com.example.dto.AssertionFinishRequest
+import com.example.dto.RegistrationFinishRequest
+import com.example.store.ChallengeService
+import com.example.store.UserStorage
+import com.webauthn4j.WebAuthnManager
 import com.webauthn4j.data.*
-import com.webauthn4j.data.attestation.authenticator.AuthenticatorAttachment
-import com.webauthn4j.data.attestation.authenticator.AuthenticatorSelectionCriteria
+import com.webauthn4j.data.attestation.authenticator.Authenticator
 import com.webauthn4j.data.client.Origin
 import com.webauthn4j.data.client.challenge.Challenge
 import com.webauthn4j.data.client.challenge.DefaultChallenge
-import com.webauthn4j.validator.WebAuthnRegistrationContext
-import com.webauthn4j.WebAuthnManager
+import com.webauthn4j.data.extension.client.AuthenticationExtensionsClientInputs
 import org.springframework.web.bind.annotation.*
-import java.security.SecureRandom
 import java.util.*
 
 @RestController
-class WebAuthnController {
-
-    private val webAuthnManager = WebAuthnManager.createNonStrictWebAuthnManager()
-    private val users = mutableMapOf<String, UserEntity>()
-    private val challenges = mutableMapOf<String, Challenge>()
+@RequestMapping
+class WebAuthnController(
+    private val challengeService: ChallengeService,
+    private val userStorage: UserStorage
+) {
+    private val manager = WebAuthnManager.createNonStrictWebAuthnManager()
 
     @PostMapping("/api/webauthn/register/options")
-    fun startRegistration(@RequestBody username: String): PublicKeyCredentialCreationOptions {
-      //Do Something
+    fun registerOptions(@RequestBody username: String): PublicKeyCredentialCreationOptions {
+        //Do Something
     }
 
     @PostMapping("/api/webauthn/register/finish")
-    fun finishRegistration(@RequestBody request: AttestationResponseRequest): String {
-      //Do Something
+    fun registerFinish(@RequestBody req: RegistrationFinishRequest): String {
+        //Do Something
     }
 
-   @PostMapping("/api/webauthn/login/options")
-    fun startLogin(@RequestBody username: String): PublicKeyCredentialRequestOptions {
-      //Do Something
+    @PostMapping("/api/webauthn/login/options")
+    fun loginOptions(@RequestBody username: String): PublicKeyCredentialRequestOptions {
+        //Do Something
     }
 
     @PostMapping("/api/webauthn/login/finish")
-    fun finishLogin(@RequestBody request: AssertionResponseRequest): String {
-      //Do Something
-    }
-
-    private fun generateChallenge(): ByteArray {
-        return ByteArray(32).apply { SecureRandom().nextBytes(this) }
+    fun loginFinish(@RequestBody req: AssertionFinishRequest): String {
+        //Do Something
     }
 }
 
-data class AttestationResponseRequest(
-    val username: String,
-    val id: ByteArray,
-    val clientDataJSON: ByteArray,
-    val attestationObject: ByteArray,
-    val clientExtensionsJSON: String?
-)
-
-data class UserEntity(
-    val username: String,
-    val credentials: MutableList<Authenticator> = mutableListOf()
-) {
-    fun toUserIdentity(): UserIdentity {
-        return UserIdentity.builder()
-            .name(username)
-            .id(UUID.nameUUIDFromBytes(username.toByteArray()).toString().toByteArray())
-            .displayName(username)
-            .build()
-    }
-}
 ```
 다음으로 WebAuthn 사용자 등록 절차를 처리하는 Controller 를 작성합니다.  
 여기서 중요한 필드 값들을 한번 짚고 가겠습니다. 
 
 ```kotlin
-private val webAuthnManager = WebAuthnManager.createNonStrictWebAuthnManager()
+private val manager = WebAuthnManager.createNonStrictWebAuthnManager()
 ```
 `WebAuthnManager` 는 WebAuthn 요청을 검증하는 핵심 클래스입니다. 현재는 테스트용이므로 NonStrict 모드를 사용합니다. 
 
 ```kotlin
-private val users = mutableMapOf<String, UserEntity>()
-private val challenges = mutableMapOf<String, Challenge>()
-```
-현재 따로 DB를 설정하지 않아서 해시맵을 통해 유저 정보와 Challenge 정보를 저장합니다. 실제로는 DB를 사용하시는 것을 권장 드립니다. 
-
-```kotlin
 @PostMapping("/api/webauthn/register/options")
 fun startRegistration(@RequestBody username: String): PublicKeyCredentialCreationOptions {
-    val challenge = DefaultChallenge()
-    challenges[username] = challenge
+    val challenge = challengeService.generate(username)
+    val user = UserIdentity(
+        id = UUID.nameUUIDFromBytes(username.toByteArray()).toString().toByteArray(),
+        name = username,
+        displayName = username
+    )
 
-    val userEntity = UserEntity(username)
-    users[username] = userEntity
-
-    val options = PublicKeyCredentialCreationOptions(
-        rp = RelyingPartyIdentity.builder().id("localhost").name("My WebAuthn App").build(),
-        user = userEntity.toUserIdentity(),
+    return PublicKeyCredentialCreationOptions(
+        rp = RelyingPartyIdentity("localhost", "My WebAuthn App"),
+        user = user,
         challenge = challenge,
         pubKeyCredParams = listOf(PublicKeyCredentialParameters("public-key", COSEAlgorithmIdentifier.ES256)),
-        authenticatorSelection = AuthenticatorSelectionCriteria(AuthenticatorAttachment.CROSS_PLATFORM, false, null),
         timeout = 60000L,
-        attestation = AttestationConveyancePreference.DIRECT
+        excludeCredentials = emptyList(),
+        authenticatorSelection = AuthenticatorSelectionCriteria(null, false, UserVerificationRequirement.PREFERRED),
+        attestation = AttestationConveyancePreference.NONE,
+        extensions = RegistrationExtensionsClientInputs()
     )
-    
-    return options
 }
 ```
 startRegistration 메소드는 사용자가 등록 요청을 보낼 때 호출 되는 메소드입니다. 
@@ -303,70 +366,80 @@ startRegistration 메소드는 사용자가 등록 요청을 보낼 때 호출 �
 그 후 새로운 사용자 객체를 생성하고 사용자 목록에 추가합니다.  
 마지막으로 `PublicKeyCredentialCreationOptions` 를 통해 option 정보를 구성합니다. 
 
-- Relying Party 정보 설정 (ID, Name)
-- 사용자 정보 설정 (userEntity 객체)
+- rp : Relying Party 정보 설정 (ID, Name)
+- user : 사용자 정보 설정 (UserIdentity 객체)
 - pubKeyCredParams: 사용할 알고리즘 지정 (ES256 사용)
+- timeout : 요청 만료 시간
+- excludeCredentials 이미 등록 된 인증기 목록, 중복 등록을 방지하기 위해 사용합니다. 
 - authenticatorSelection: 인증기 선택 기준
 - attestation: 인증 장치의 신뢰를 확인할 때 DIRECT 모드를 사용
+- extensions : Webauthn 확장을 위한 옵션 (예 : 인증기 이름, device bound) 일반적으로 비웁니다.
 
 ```kotlin
 @PostMapping("/api/webauthn/register/finish")
-fun finishRegistration(@RequestBody request: AttestationResponseRequest): String {
-    val challenge = challenges[request.username] ?: throw IllegalArgumentException("Challenge not found")
+fun finishRegistration(@RequestBody request: RegistrationFinishRequest): String {
+    val challenge = challengeService.get(req.username) ?: error("Challenge not found")
 
-    val context = WebAuthnRegistrationContext(
-        credentialId = request.id,
-        clientDataJSON = request.clientDataJSON,
-        attestationObject = request.attestationObject,
-        clientExtensionsJSON = request.clientExtensionsJSON,
-        challenge = challenge,
-        origin = Origin("http://localhost:3000")
+    val credential = RegistrationRequest(
+        credentialId = req.id,
+        clientDataJSON = req.response.clientDataJSON,
+        attestationObject = req.response.attestationObject,
+        clientExtensionsJSON = null
     )
 
-    val response = webAuthnManager.validate(context)
+    val parameters = RegistrationParameters(
+        challenge = challenge,
+        origin = Origin("http://localhost:3000"),
+        rpId = "localhost",
+        userVerificationRequired = false
+    )
 
-    val userEntity = users[request.username] ?: throw IllegalArgumentException("User not found")
-    userEntity.credentials.add(response.attestedCredentialData)
+    val result = manager.validate(credential, parameters)
+    val authenticator = result.attestationObject.authenticatorData.attestedCredentialData
+        ?: error("Attested credential missing")
+    val stored = Authenticator(
+        credentialId = req.id,
+        attestedCredentialData = authenticator,
+        counter = result.attestationObject.authenticatorData.signCount
+    )
 
-    return "Registration completed"
+    userStorage.save(req.username, stored)
+    challengeService.clear(req.username)
+    return "Registration success"
 }
 ```
-finishRegistration 은 등록을 완료하기 위해 호출되는 메소드입니다.  
-저장된 Challenge 와 요청에서 전달 된 Challenge 가 일치하는 지 확인합니다. 
-그 다음 WebAuthnRegistraionContext 에 검증 할 데이터들을 담습니다.  
-마지막으로 webAuthnManager 를 통해 검증을 수행한 후, 검증 된 인증 정보를 사용자 데이터베이스에 저장 함으로써 마무리 합니다. 
+finishRegistration 은 등록을 완료하기 위해 호출되는 메소드입니다. Frontend 에서 전달한 Request 를 WebAuthn4j 가 요구하는 RegistrationRequest 객체로 변환합니다. RegistrationParameters 에는 검증에 필요한 추가 정보 (rpId, origin) 정보를 넣습니다. origin 은 브라우저에서 요청을 보낸 출처와 정확히 일치해야 하고, rpId 는 서버에 등록 된 옵션과 일치해야 합니다. 
 
-중요한 포인트를 다시 집어 보겠습니다. 
-- WebAuthnManager 클래스는 등록 요청 검증 을 수행합니다.
-- AttestationResponseRequest 클래스는 프론트엔드로부터 전달받은 데이터를 담기 위한 데이터 클래스입니다.
-- challenge 값은 요청마다 새로 생성하여 저장하고 비교하는 방식으로 검증합니다.
+그 후 WebAuthn4j 내부 로직으로 등록 응답을 검증합니다. 그 후 authenticator 객체를 생성하는데, 검증이 성공한다면 인증기의 식별자, 공개키 등 정보를 포함해서 생성합니다. 
+
+인증기 정보를 등록 요청을 보낸 사용자 기준으로 저장합니다. challenge 값은 일회성이므로 등록 후 제거합니다. 
 
 ```kotlin
-@PostMapping("/login/options")
-fun startLogin(@RequestBody username: String): PublicKeyCredentialRequestOptions {
-    val userEntity = users[username] ?: throw IllegalArgumentException("User not found")
+@PostMapping("/api/webauthn/login/options")
+fun loginOptions(@RequestBody username: String): PublicKeyCredentialRequestOptions {
+    val challenge = challengeService.generate(username)
+    val authenticator = userStorage.get(username) ?: error("User not found")
 
-    val challenge = DefaultChallenge()
-    challenges[username] = challenge
-
-    val allowCredentials = userEntity.credentials.map { credential ->
+    val allow = listOf(
         PublicKeyCredentialDescriptor(
-            PublicKeyCredentialType.PUBLIC_KEY,
-            credential.credentialId,
-            null
+            type = PublicKeyCredentialType.PUBLIC_KEY,
+            id = authenticator.credentialId,
+            transports = null
         )
-    }
+    )
 
     return PublicKeyCredentialRequestOptions(
         challenge = challenge,
-        rpId = "localhost",
-        allowCredentials = allowCredentials,
         timeout = 60000L,
-        userVerification = UserVerificationRequirement.PREFERRED
+        rpId = "localhost",
+        allowCredentials = allow,
+        userVerification = UserVerificationRequirement.PREFERRED,
+        extensions = AuthenticationExtensionsClientInputs()
     )
 }
 ```
-이제 로그인을 해 봐야죠? startLogin 메소드에서는 로그인 명령을 수행합니다.  
+이제 로그인을 해 봐야죠? loginOptions 메소드에서는 Frontend 에게 로그인에 필요한 정보를 제공합니다. 
+
 요청 받은 유저 정보를 메모리에서 찾습니다. 그 후 challenge 를 생성합니다. 
 다음으로 사용자가 등록한 인증기 목록을 추출합니다. 이 과정에서 PublicKeyCredentialDescriptor 를 사용해서 각 인증기의 ID (Credential ID) 를 포함 시킵니다. 
 
@@ -380,37 +453,39 @@ fun startLogin(@RequestBody username: String): PublicKeyCredentialRequestOptions
 - userVerification: 사용자가 인증 과정에서 생체 인증 또는 PIN 입력을 요구할지 설정 (PREFERRED 로 설정)
 
 ```kotlin
-@PostMapping("/login/finish")
-fun finishLogin(@RequestBody request: AssertionResponseRequest): String {
-    val challenge = challenges[request.username] ?: throw IllegalArgumentException("Challenge not found")
-    val userEntity = users[request.username] ?: throw IllegalArgumentException("User not found")
-    
-    val authenticator = userEntity.credentials.find { it.credentialId.contentEquals(request.id) }
-        ?: throw IllegalArgumentException("Authenticator not found")
+@PostMapping("/api/webauthn/login/finish")
+fun loginFinish(@RequestBody req: AssertionFinishRequest): String {
+val challenge = challengeService.get(req.username) ?: error("Challenge not found")
+    val authenticator = userStorage.get(req.username) ?: error("Authenticator not found")
 
-    val context = WebAuthnAuthenticationContext(
-        credentialId = request.id,
-        clientDataJSON = request.clientDataJSON,
-        authenticatorData = request.authenticatorData,
-        signature = request.signature,
-        clientExtensionsJSON = request.clientExtensionsJSON,
-        challenge = challenge,
-        origin = Origin("http://localhost:3000"),
-        authenticator = authenticator
+    val credential = AuthenticationRequest(
+        credentialId = req.id,
+        clientDataJSON = req.response.clientDataJSON,
+        authenticatorData = req.response.authenticatorData,
+        signature = req.response.signature,
+        clientExtensionsJSON = null
     )
 
-    webAuthnManager.validate(context)
+    val parameters = AuthenticationParameters(
+        challenge = challenge,
+        origin = Origin("http://localhost:3000"),
+        rpId = "localhost",
+        authenticator = authenticator,
+        userVerificationRequired = false
+    )
 
-    return "Login successful"
+    manager.validate(credential, parameters)
+    challengeService.clear(req.username)
+    return "Login success"
 }
 ```
 마지막으로 로그인 검증입니다. 
 
 사용자가 로그인 요청을 보내면서 생성했던 Challenge 값을 가져옵니다. 만약 해당 Challenge 가 없거나 만료된 경우 예외가 발생합니다. 
 
-다음으로 사용자가 등록한 인증기 (Authenticator) 를 검색합니다. 인증기 ID (request.id) 가 사용자의 인증기 목록에 없으면 예외를 발생시킵니다.
+다음으로 사용자가 등록한 인증기 (authenticator) 를 검색합니다. 인증기 ID (여기서는 username) 가 사용자의 인증기 목록에 없으면 예외를 발생시킵니다.
 
-다음으로 인증 요청을 검증하기 위해 필요한 데이터를 포함하는 WebAuthnAuthenticationContext 를 생성합니다. Origin 은 클라이언트 요청의 출처를 의미하며, http://localhost:3000 으로 설정 합니다. 
+다음으로 인증 요청을 검증하기 위해 필요한 데이터를 포함하는 AuthenticationParameters 를 생성합니다. Origin 은 클라이언트 요청의 출처를 의미하며, http://localhost:3000 으로 설정 합니다. 
 
 WebAuthnManager 를 통해 검증을 수행하고 성공하면 인증이 완료됩니다. 
 
@@ -418,90 +493,26 @@ WebAuthnManager 를 통해 검증을 수행하고 성공하면 인증이 완료�
 React 에서 @simplewebauthn/browser 라이브러리를 활용해서 WebAuthn 인증을 구현 해 보겠습니다. 설명 편의 상 예제 코드는 Typescript 를 사용합니다. 
 
 ```shell
-npm install @simplewebauthn/browser
+npm install axios @simplewebauthn/browser react-router-dom
+npm install --save-dev @types/react-router-dom
 ```
 
-```jsx
-import React, { useState } from 'react';
-import { startRegistration, RegistrationResponseJSON } from '@simplewebauthn/browser';
-import axios from 'axios';
-
-interface PublicKeyCredentialCreationOptionsJSON {
+```typescript
+export interface PublicKeyCredentialCreationOptionsJSON {
   challenge: string;
-  rp: {
-    name: string;
-    id: string;
-  };
-  user: {
-    id: string;
-    name: string;
-    displayName: string;
-  };
-  pubKeyCredParams: Array<{ type: string; alg: number }>;
+  rp: { name: string; id: string };
+  user: { id: string; name: string; displayName: string };
+  pubKeyCredParams: { type: string; alg: number }[];
+  timeout?: number;
+  attestation?: string;
   authenticatorSelection?: {
     authenticatorAttachment?: string;
     requireResidentKey?: boolean;
     userVerification?: string;
   };
-  timeout?: number;
-  attestation?: string;
 }
 
-const App: React.FC = () => {
-  const [username, setUsername] = useState<string>('');
-
-  const handleRegister = async () => {
-    try {
-      // 1. 서버로부터 PublicKeyCredentialCreationOptions 가져오기
-      const optionsResponse = await axios.post<PublicKeyCredentialCreationOptionsJSON>(
-        '/api/webauthn/register/options', 
-        { username }
-      );
-
-      const options = optionsResponse.data;
-
-      // 2. 인증기를 호출하여 등록 데이터 생성
-      const attestationResponse: RegistrationResponseJSON = await startRegistration(options);
-
-      // 3. 서버로 등록 데이터를 보내서 검증 및 저장 요청
-      const result = await axios.post('/api/webauthn/register/finish', {
-        username,
-        ...attestationResponse,
-      });
-
-      alert("Registration completed: " + result.data);
-    } catch (error) {
-      console.error(error);
-      alert("Registration failed");
-    }
-  };
-
-  return (
-    <div>
-      <input
-        type="text"
-        value={username}
-        onChange={e => setUsername(e.target.value)}
-        placeholder="Enter username"
-      />
-      <button onClick={handleRegister}>Register</button>
-    </div>
-  );
-};
-
-export default App;
-```
-먼저 서버에서 반환되는 옵션의 형태를 interface 로 정의합니다. 
-서버로 부터 `/api/webauthn/register/options/` 요청을 보냅니다. 그 후 WebAuthn 인증기를 호출해서 등록을 수행하는데, `startRegistration` 함수는 `RegistrationResponseJSON` 타입(라이브러리 제공)의 데이터를 반환합니다. 
-
-마지막으로 인증 정보를 서버로 보내 검증을 요청합니다. 서버에서 해당 데이터를 검증하고 사용자 정보를 저장합니다. 
-
-```jsx
-import React, { useState } from 'react';
-import { startRegistration, startAuthentication, AuthenticationResponseJSON } from '@simplewebauthn/browser';
-import axios from 'axios';
-
-interface PublicKeyCredentialRequestOptionsJSON {
+export interface PublicKeyCredentialRequestOptionsJSON {
   challenge: string;
   rpId: string;
   allowCredentials?: Array<{
@@ -509,58 +520,143 @@ interface PublicKeyCredentialRequestOptionsJSON {
     type: string;
     transports?: string[];
   }>;
-  userVerification?: 'required' | 'preferred' | 'discouraged';
   timeout?: number;
+  userVerification?: 'required' | 'preferred' | 'discouraged';
 }
-
-const App: React.FC = () => {
-  const [username, setUsername] = useState<string>('');
-
-  const handleLogin = async () => {
-    try {
-      // 1. 서버로부터 PublicKeyCredentialRequestOptions 가져오기
-      const optionsResponse = await axios.post<PublicKeyCredentialRequestOptionsJSON>(
-        '/api/webauthn/login/options',
-        { username }
-      );
-      const options = optionsResponse.data;
-
-      // 2. 인증기를 사용하여 인증 데이터 생성
-      const assertionResponse: AuthenticationResponseJSON = await startAuthentication(options);
-
-      // 3. 서버로 인증 데이터를 보내서 검증 요청
-      const result = await axios.post('/api/webauthn/login/finish', {
-        username,
-        ...assertionResponse,
-      });
-
-      alert("Login successful: " + result.data);
-    } catch (error) {
-      console.error(error);
-      alert("Login failed");
-    }
-  };
-
-  return (
-    <div>
-      <input
-        type="text"
-        value={username}
-        onChange={e => setUsername(e.target.value)}
-        placeholder="Enter username"
-      />
-      <button onClick={handleLogin}>Login</button>
-    </div>
-  );
-};
-
-export default App;
 ```
+
+먼저 옵션의 형태를 interface 로 정의합니다. 
+
+PublicKeyCredentialCreationOptionsJSON 는 WebAuthn 등록 과정에서 브라우저에서 사용되는 객체 입니다. 
+브라우저가 인증기를 호출하기 위해 필요한 정보들을 담고 있습니다. 
+
 PublicKeyCredentialRequestOptionsJSON 은 서버에서 제공하는 로그인 옵션의 타입 정의입니다. 
 - allowCredentials: 사용자가 등록한 인증기의 정보 리스트.
 - challenge: 무작위로 생성된 바이트 배열을 base64url로 인코딩한 값.
 - rpId: Relying Party ID (예: localhost).
 - userVerification: 사용자 검증 요구 수준 (preferred, required, discouraged)
+
+```jsx
+import React, { useState } from 'react';
+import axios from 'axios';
+import { startRegistration, RegistrationResponseJSON } from '@simplewebauthn/browser';
+import { PublicKeyCredentialCreationOptionsJSON } from '../types/webauthn';
+
+const RegisterPage: React.FC = () => {
+  const [username, setUsername] = useState('');
+
+  const handleRegister = async () => {
+    try {
+      const optionsRes = await axios.post<PublicKeyCredentialCreationOptionsJSON>(
+        '/api/webauthn/register/options',
+        username,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const attestationResponse: RegistrationResponseJSON = await startRegistration(optionsRes.data);
+
+      const payload = {
+        username,
+        id: attestationResponse.id,
+        rawId: attestationResponse.rawId,
+        type: attestationResponse.type,
+        response: {
+          clientDataJSON: attestationResponse.response.clientDataJSON,
+          attestationObject: attestationResponse.response.attestationObject,
+        },
+      };
+
+      await axios.post('/api/webauthn/register/finish', payload);
+      alert('Registration complete');
+    } catch (e) {
+      console.error(e);
+      alert('Registration failed');
+    }
+  };
+
+  return (
+    <div>
+      <h2>Register</h2>
+      <input
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <button disabled={!username} onClick={handleRegister}>
+        Register with Passkey
+      </button>
+    </div>
+  );
+};
+
+export default RegisterPage;
+```
+서버로 부터 `/api/webauthn/register/options/` 요청을 보냅니다. 그 후 WebAuthn 인증기를 호출해서 등록을 수행하는데, `startRegistration` 함수는 `RegistrationResponseJSON` 타입(라이브러리 제공)의 데이터를 반환합니다. 
+
+마지막으로 인증 정보를 서버로 보내 검증을 요청합니다. 서버에서 해당 데이터를 검증하고 사용자 정보를 저장합니다. 
+
+```jsx
+import React, { useState } from 'react';
+import axios from 'axios';
+import { startAuthentication, AuthenticationResponseJSON } from '@simplewebauthn/browser';
+import { PublicKeyCredentialRequestOptionsJSON } from '../types/webauthn';
+import { useNavigate } from 'react-router-dom';
+
+const LoginPage: React.FC = () => {
+  const [username, setUsername] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    try {
+      const optionsRes = await axios.post<PublicKeyCredentialRequestOptionsJSON>(
+        '/api/webauthn/login/options',
+        username,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const assertionResponse: AuthenticationResponseJSON = await startAuthentication(optionsRes.data);
+
+      const payload = {
+        username,
+        id: assertionResponse.id,
+        rawId: assertionResponse.rawId,
+        response: {
+          clientDataJSON: assertionResponse.response.clientDataJSON,
+          authenticatorData: assertionResponse.response.authenticatorData,
+          signature: assertionResponse.response.signature,
+          userHandle: assertionResponse.response.userHandle,
+        },
+        type: assertionResponse.type,
+        clientExtensionResults: assertionResponse.clientExtensionResults,
+      };
+
+      await axios.post('/api/webauthn/login/finish', payload);
+      alert('Login successful');
+      navigate('/main');
+    } catch (e) {
+      console.error(e);
+      alert('Login failed');
+    }
+  };
+
+  return (
+    <div>
+      <h2>Login</h2>
+      <input
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <button disabled={!username} onClick={handleLogin}>
+        Login with Passkey
+      </button>
+    </div>
+  );
+};
+
+export default LoginPage;
+```
+다음으로 로그인입니다.
 
 사용자가 입력 한 username 을 서버로 보내고 서버는 사용자의 등록된 인증기를 기반으로 로그인 옵션을 반환합니다.
 
@@ -568,10 +664,39 @@ PublicKeyCredentialRequestOptionsJSON 은 서버에서 제공하는 로그인 �
 
 다음으로 인증 결과를 서버로 보내 검증을 요청합니다. 서버에서 이 데이터를 검증하여 사용자의 인증 성공 여부를 확인합니다. 
 
+```jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+
+const MainPage: React.FC = () => (
+  <div>
+    <h1>Welcome 🎉</h1>
+  </div>
+);
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/main" element={<MainPage />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
+```
+애플리케이션 최 상위 App.tsx 입니다. 간단하게 로그인 여부를 테스트 해 볼 수 있을거에요. 
+
 # Outro
 이번 포스팅에서는 FIDO, WebAuthn 에 대해 최대한 풀어서 정리 해 보았습니다. 
 
-이해가 잘 되셨다면 다행입니다. 추후 웹 애플리케이션에서 생체인증 등을 구현할 때 WebAuthn 을 활용해보시는 게 어떨까요?
+많은 애플리케이션에서 생체인증을 제공하고, 특히 웹뷰 기반의 애플리케이션에서는 이런 형태로 인증을 구현 했을 것입니다. 추후 웹 애플리케이션에서 생체인증 등을 구현할 때 WebAuthn 을 활용해보시는 게 어떨까요?
 
 # Reference
 
