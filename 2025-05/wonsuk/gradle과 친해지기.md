@@ -1,16 +1,16 @@
-# gradle과 친해지기
-> 매번 발목을 잡는 build툴 gradle. 우리가 자연스럽게 쓰는 코드가 어떻게 받아지고 흘러가는지 알아봅니다.
+# build와 친해지기
+> 매번 발목을 잡는 build. 우리가 자연스럽게 쓰는 코드가 어떻게 받아지고 흘러가는지 알아봅니다.
 ### 👤 대상 독자
-- 개발하고 싶은데 build 툴에 발목잡히는 개발자
+- 개발하고 싶은데 build에 발목잡히는 개발자
 
 ### ⏳ 읽는 데 걸리는 시간 
  - 10 ~ 15분
 
 ### 🔍 목차 (TOC)
 
-- [1. Intro] (#1-Intro-익숙하지만-낯선-JVM)
+- [1. Intro] ()
 - [2. build 툴](#2-JVM은-무엇인가요)
-    - [2-1. JVM의 정의](#2-1-JVM의-정의)
+    - [2-1. gradle은 무엇인가요?](#2-1-JVM의-정의)
 - [3. gradle의 기능 ](#3-ai-없이도-경쟁력이-있을까)
 - [4. gradle 사용시 이슈 ](#3-ai-없이도-경쟁력이-있을까)
     
@@ -18,32 +18,60 @@
 
 ---
 
-# 1. Intro 익숙하지만 낯선 JVM
+# 1. 왜 나만 빌드가 안될까
 
-안녕하세요. 독서실 고인물 이원석입니다  
-이번엔 미뤄두었지만 다시 마주한 JVM을 얘기해보고 싶었습니다.  
-JVM은 Java를 사용하다보면 항상 따라오는 개념중 하나입니다. 하지만 JVM이 정확히 무엇인지, 어떻게 동작하는지에 대해 자세히 알기 보다는 
-**그런게 있다** 라고만 생각하고 넘어갔던 경우가 많았습니다.<br/>
-JVM의 정의와 구조를 알아보고 최종적으로는 어떻게 코드에 도입하면 효율적으로 메모리를 사용할 수 있을지도 알아봅니다.
+안녕하세요. 이원석입니다  
+나는 개발을 얼른 하고 싶은데, build가 안되고, 의존성이 안받아져서 지장을 받으면 그것만큼 막막하고 답답할 때가 없었습니다
+build에 대한 개념과 기능을 알아봅니다.
 
 ---
 
-# 2. JVM은 무엇인가요?
+# 2. build 
 
-## 2-1. JVM의 정의
+## 2-1. build 정의
+build는 소스코드를 실행할 수 있는 application으로 변환하는 과정을 의미합니다.
+build툴은 이 build를 자동으로 할 수 잇게 지원해주는 도구라고 할 수 있습니다.
 
-자바 가상 머신`JVM, Java Virtual Machine`은 자바 프로그램을 실행하는 데 필요한 가상 컴퓨터입니다.
-- 특징
-    - 자바 프로그램이 다양한 플랫폼(window, 리눅스등 다양한 os)에서 동일하게 실행될 수 있도록 환경을 제공합니다.
-    - 자바 코드를 실행시키기 위해서 반드시 필요한 프로그램입니다.
-    - 메모리 관리, 스레드 관리, 바이트 코드 실행 등의 기능을 수행합니다.
+- 소스코드를 컴파일하고, 실행파일이나 라이브러리 형태로 패키징합니다.
+- 외부 라이브러리나 모듈 버전, 종속성을 자동으로 관리합니다.
+- 테스트를 자동으로 실행합니다.
 
 
-## 2-2. JVM은 왜 필요한가요?
+## 2-2. build의 과정
+gradle 기준으로 설명을 하면 크게 3가지를 이야기 합니다.
 
-`Java`가 다양한 플랫폼(OS)에 종속적이지 않고 동작할 수 있도록 하기 위해서는,
-그 위에서 `java`를 실행시킬 역할을 할 수 있는 것이 필요했습니다.
-그것이 바로 `JVM`입니다.
+
+![gradle 라이프 사이클](img/gradle라이프사이클.png)
+
+
+### 1 초기화
+1. init.gradle. 가장먼저 실행되어 사용자정보 및 실행환경을 초기화합니다.
+2. settings.gradle 파일을 감지하여 Settings 객체를 생성합니다.(gradle 프로젝트의 구조와 설정을 담당합니다.)
+
+
+### 2 구성 
+
+1. 빌드에 참여하는 모든 프로젝트의 build.gradle을 실행합니다.
+2. 정의된 프로젝트의 플러그인, 의존성등을 실행합니다.
+
+
+### 3 실행
+구성단계에서 생성하고 설정된 task단위로 실행합니다.
+
+compileJava
+processResources
+test
+jar
+assemble
+check
+
+## 2-3. build 툴을 사용해서 build하는 이유
+
+build는 앞의 과정처럼 다양한 작업들로 이루어져 있습니다. 이것을 수동으로 하게 된다면(여러 라이브러리 묶기 등등) 
+
+- 개인마다 각각 따로 하게 되므로 실수가 나오기 쉽습니다.
+- 모든 과정을 일일히 손으로 해야하므로 시간이 오래걸릴 것입니다.
+
 
 ### c언어와 java의 비교
 C언어의 경우, 컴파일러가 소스코드를 기계어(바이너리 코드)로 변환하여 실행파일을 만들어내는 방식이었습니다.<br/>
@@ -132,31 +160,6 @@ graph TD;
     - 네이티브 메서드 영역(`Native Method Stack`)
 
 
-## 3-1. 클래스 로더
-클래스를 필요할때만 `JVM` 내부 메모리(`Runtime Data Area`)에 동적으로 로딩하고, 초기화하는 역할을 합니다.
-
-로딩 순서 : 로딩 -> 링크 -> 초기화  
-![클래스로더](img/클래스로더.png)
-
-
-```mermaid
-
-sequenceDiagram
-    participant AppClassLoader as ApplicationClassLoader
-    participant PlatClassLoader as PlatformClassLoader
-    participant BootClassLoader as BootstrapClassLoader
-    participant JVM as JVM
-    
-    AppClassLoader->>AppClassLoader: 요청된 클래스가 로드되어 있는지 확인
-    AppClassLoader->>PlatClassLoader: 클래스가 로드되지 않았다면 PlatformClassLoader에 위임
-    PlatClassLoader->>BootClassLoader: PlatformClassLoader가 클래스 로드를 못하면 BootstrapClassLoader에 위임
-    BootClassLoader->>BootClassLoader: 부트스트랩 클래스 로더에서 클래스 로드 확인
-    BootClassLoader->>JVM: 클래스를 찾지 못하면 예외 발생
-    BootClassLoader->>AppClassLoader: 클래스를 찾으면 로드하여 메모리에 저장
-    AppClassLoader->>AppClassLoader: 로드된 클래스는 캐싱되어 재사용
-    AppClassLoader->>JVM: 로드된 클래스를 반환
-
-```
 
 ## 3-2. 실행 엔진
 ## 3-2-1. 인터프리터
@@ -196,54 +199,7 @@ sequenceDiagram
 C언어와는 다르게 메모리 관리에 신경쓰지 않아도 되는 장점이 있습니다.  
 종류로는 아래와 같이 있습니다. 해당 내용은 방대하기 때문에 이 글에서는 종류만 정리해 볼게요.  
 
-### GC 종류
-  - Serial GC
-  - Parallel GC
-  - CMS (Concurrent Mark-Sweep) GC
-  - G1 GC (Garbage-First Garbage Collector)
-  - ZGC (Z Garbage Collector)
-  - Shenandoah GC
 
-
-## 3-3. 런타임 데이터 영역
-JVM이 프로그램 실행시 사용하는 메모리 공간입니다. JVM 실행시 생성되고, 프로그램 종료시 해제됩니다.  
-mehod, heap 영역은 모든 스레드가 공유하고, 나머지는 스레드별로 생성됩니다.
-
-```mermaid
-classDiagram
-    class RuntimeDataArea{
-        +Thread 1
-        +Thread 2
-        +Thread 3
-        +Heap
-        +Method Area
-    }
-    class Thread1{
-        +PC
-        +JVM stack
-        +Native Method stack
-    }
-    class Thread2{
-        +PC
-        +JVM stack
-        +Native Method stack
-    }
-    class Thread3{
-        +PC
-        +JVM stack
-        +Native Method stack
-    }
-    class Heap{
-    }
-    class MethodArea{
-        +Runtime Constant Pool
-    }
-    RuntimeDataArea *-- Thread1
-    RuntimeDataArea *-- Thread2
-    RuntimeDataArea *-- Thread3
-    RuntimeDataArea *-- Heap
-    RuntimeDataArea *-- MethodArea
-```
 
 
 ### 3-3-1. method 영역(class영역 또는 static영역)
@@ -302,82 +258,7 @@ String ss = new String("hello"); // new로 생성해서 heap에 저장
 
 
 
-### 3-3-2. Heap 영역
-프로그램에서 동적으로 할당되는 객체들을 저장하는 공간입니다.  
-GC의 대상이 되는 곳이죠.
-이 영역에서 생성된 객체나 배열은 참조형으로, stack 영역의 변수나 객체의 필드에서
-참조 됩니다.
 
-저장 대상
-* new 연산자로 생성되는 클래스
-* 인스턴스 변수
-* 배열 타입
-* enum타입
-
-java 8버전 부터 이전버전과 다르게 구조가 변경되었습니다.  
-![heap구조](img/heap구조.png)
-
-### young generation
-* eden
-  * 새로운 객체들이 생성되는 공간입니다.
-  * GC가 자주 발생하며, 대부분의 객체가 이곳에서 생성됩니다.
-* survivor 
-  * eden에서 살아남은 객체들이 이동하는 공간입니다.
-  * 객체가 GC에서 살아남으면 하나의 survivor 공간으로 이동하고, 또 GC를 거쳐 살아남으면
-  다른 survivor로 이동합니다.
-  * 서로 번갈아가며 2개의 survivor이 사용됩니다. 한번 gc후 살아남은 객체들이 다음 survivor영역으로
-  이동합니다.
-### old generation
-* old
-  * young generation에서 여러번 GC에서 살아남은 객체들이 이동하는 영역입니다.
-  * 생명주기가 긴 객체들이 주로 위치하고 ,GC가 덜 발생합니다.
-
-### 3-3-3. stack 영역
-메서드 호출 및 지역변수 저장을 담당합니다.  
-메서드 실행에 필요한 정보를 저장하고 관리하는 역할을 하고 있습니다.
-후입선출 구조로, 마지막에 들어온 스택프레임이 가장 먼저 제거 됩니다.
-
-> ### 스택 프레임  
-> 함수의 호출과 관계되는 정보를 저장하는 영역입니다.
-> 함수의 매개변수, 호출이 끝난 후 반환 주소값, 지역변수등이 저장됩니다.
-> 
-
-### 3-3-4. pc 레지스터 영역
-현재 수행중인 JVM 명령어 주소를 저장하는 공간입니다.
-
-* 스레드 마다 독립적으로 동작합니다. 그래서 멀티스레드 환경에서도 각 스레드의 실행위치를
-독립적으로 추적할 수 있습니다.
-* 현재 실행중인 메서드에서 어떤 바이트코드를 실행할지 추적합니다.
-메서드 호출후 실행될때마다 pc레지스터가 해당 명령어의 주소로 갱신됩니다.
-* 스레드간 컨텍스트 스위칭이 발생한다면 pc 레지스터를 활용하여 스위칭합니다.
-
-> ### PC 레지스터는 왜 필요한가요?
-> 1. 위 특징에서도 말씀드렸듯, 멀티스레드 환경에서 스레드별로 실행중인 명령어 위치를
-> 알고 있어야 정상적으로 스레드별 실행이 진행됩니다.
-> 2. jvm에서 바이트코드는 순차적으로 실행되는데, 이를 위해서는 현재 명령어 위치가 어디인지,
-> 그 다음 명령어 위치는 어디인지를 알아야 하기 때문입니다.
->    1. 순차적으로 실행한다고 하면 현재 명령어 위치 + 바이트 코드 길이를 더한 위치로 업데이트
->    2. 분기문의 경우 조건에 맞는 분기지점의 주소로 설정
-> 
-
-
-### 3-3-5. native method stack 영역
-실제 실행할 수 있는 기계어로 작성된 프로그램을 실행시키는 영역입니다.
-
-* 스택 프레임 : 네이티브 메서드 스택영역에서도 존재합니다. 외부에서 이영역을 호출하게 될 경우
-stack 영역처럼 LIFO구조로 생성 및 소멸이 됩니다.
-* JNI : 보통 jni 함수를 통해서 네이티브 메서드가 호출되고 java 코드와 상호작용합니다.
-* JIT : JIT 컴파일러의 경우에도 자주 실행되는 코드(HotSpot)을 감지해서 네이티브 코드로 변환후
-이 영역에 저장합니다.
-
-### 3-3-6. JNI
-다른 언어(C, C++)로 이루어진 어플리케이션이 java와 상호작용할 수 있도록 인터페이스를 
-제공합니다.  
-JVM이 네이티브 메서드를 사용하고 native method stack 영역에 적재할 수 있도록 도와줍니다.
-
-
-
-런타임 상수풀이 heap -> method로 변경된 이유
 
 
 # 4. Outro
@@ -396,12 +277,9 @@ JVM에 대해 좀 더 알게 되면 메모리를 생각하는 코드에 대해�
 
 ---
 reference
-- https://inpa.tistory.com/entry/JAVA-%E2%98%95-JDK-JRE-JVM-%EA%B0%9C%EB%85%90-%EA%B5%AC%EC%84%B1-%EC%9B%90%EB%A6%AC-%F0%9F%92%AF-%EC%99%84%EB%B2%BD-%EC%B4%9D%EC%A0%95%EB%A6%AC#jvm_java_virtual_machine
-- https://yeon-kr.tistory.com/118
-- https://ko.wikipedia.org/wiki/JIT_%EC%BB%B4%ED%8C%8C%EC%9D%BC
-- https://riptutorial.com/java/example/18231/overview
-- https://jh7722.tistory.com/250
-- https://velog.io/@falling_star3/Java-JVM-%EB%A9%94%EB%AA%A8%EB%A6%AC%EA%B5%AC%EC%A1%B0-%EC%95%94%EA%B8%B0-%EB%A7%90%EA%B3%A0-%EC%9D%B4%ED%95%B4%ED%95%98%EA%B8%B0%EC%83%81%EC%86%8D%EC%9D%84-%EA%B3%81%EB%93%A4%EC%9D%B8
+- https://ggop-n.tistory.com/41
+- https://shin-e-dog.tistory.com/75
+- https://everyday-develop-myself.tistory.com/300
 ---
 
 [//]: # ()
