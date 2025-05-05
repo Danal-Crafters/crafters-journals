@@ -30,7 +30,7 @@ build에 대한 개념과 기능을 알아봅니다.
 
 ## 2-1. build 정의
 build는 소스코드를 실행할 수 있는 application으로 변환하는 과정을 의미합니다.
-build툴은 이 build를 자동으로 할 수 잇게 지원해주는 도구라고 할 수 있습니다.
+build툴은 이 build를 자동으로 할 수 있게 지원해주는 도구라고 할 수 있습니다.
 
 - 소스코드를 컴파일하고, 실행파일이나 라이브러리 형태로 패키징합니다.
 - 외부 라이브러리나 모듈 버전, 종속성을 자동으로 관리합니다.
@@ -58,12 +58,9 @@ gradle 기준으로 설명을 하면 크게 3가지를 이야기 합니다.
 ### 3 실행
 구성단계에서 생성하고 설정된 task단위로 실행합니다.
 
-compileJava
-processResources
-test
-jar
-assemble
-check
+java 프로젝트 gradle 기준으로 기본적으로 실행되는 task들을 보면, 아래와 같이 수많은 단계들로 이루어져 있는 것을 볼 수 있습니다.
+![java build 순서](img/java빌드순서.png)
+
 
 ## 2-3. build 툴을 사용해서 build하는 이유
 
@@ -73,192 +70,70 @@ build는 앞의 과정처럼 다양한 작업들로 이루어져 있습니다. �
 - 모든 과정을 일일히 손으로 해야하므로 시간이 오래걸릴 것입니다.
 
 
-### c언어와 java의 비교
-C언어의 경우, 컴파일러가 소스코드를 기계어(바이너리 코드)로 변환하여 실행파일을 만들어내는 방식이었습니다.<br/>
-그러나 바이너리 코드는 특정 OS(ex : 리눅스, mac등)나 CPU구조에 따라서 컴파일이 다르게 된다는 특징이 있었습니다.<br/>
-그래서 OS에 따라서 프로그램을 따로 만들어야 하는 문제가 있죠.(ex: 리눅스용, 윈도우용)<br/>
-```mermaid
-graph TD;
-C_Source[C언어 코드] -->|Windows Compiler| Windows_Binary[Windows]
-C_Source -->|Linux Compiler| Linux_Binary[Linux]
-C_Source -->|macOS Compiler| macOS_Binary[macOS]
-    subgraph Windows
-        Windows_Binary
-    end
-    subgraph Linux
-        Linux_Binary
-    end
-    subgraph macOS
-        macOS_Binary
-    end
-```
+## 2-4. build task
 
-이렇게 컴파일러가 OS마다 달라서 일일이 프로그램을 만들어야 하는 문제를 해결하기 위해 JVM이 등장합니다.<br/>
+의식하지 못했던 `task`들에 대해서 하나씩 알아보겠습니다.
 
-`java`의 경우, OS로 바로 실행하는 것이 아닌, `JVM`을 통해서 OS와 상호작용합니다.<br/>
-`JVM`의 존재만으로 OS를 고려하지 않고도 프로그램을 실행시킬 수 있게 된 것이죠.<br/>
-그래서 C언어처럼 다양한 OS에 맞춰진 컴파일러가 이해할 수 있게 코드수정을 하지 않아도 됩니다.
+### 1. compileJava
+직관적으로 `jdk` 컴파일러로 `java` 소스코드를 컴파일합니다.
+
+### 2. processResources
+`resources` 아래 모든파일을 `build/resources/main` 디렉토리에 복사합니다. <br/>
+리소스 파일을 `build`의 결과물에 포함시키기 위해서 복사하는 작업입니다.
+
+### 3. classes
+`compileJava`와 `processResources`를 진행하고 두 단계가 성공하면 완료처리만 진행합니다. <br/>
+불필요한 단계라고 생각할 수도 있지만, 하나의 중간지점을 제공하는 역할을 합니다. `test`는 `classes`에 의존하고 있는데요,
+테스트 전에 컴파일이 완료되어 있어야 하기 때문입니다.<br/>
+또한, 언어가 다양할 경우 `compileTask`(kotlin으로 치면 compileKotlin)도 포함해줍니다.
+
+### 4. jar
+`build/classes/java/main`에 있는 모든 파일(class와 resources)을 `jar`파일로 묶어줍니다. <br/>
+실행기능이 없고, 실행하려면 `Main-Class`를 `MANIFEST.MF`에 직접 지정해줘야 합니다.
 
 
-단, JVM 자체는 **OS에 종속적입니다.** 그래서 OS에 맞는 JVM 설치는 필요합니다.  
-그러면 java도 OS에 의존적인건 다름 없지 않느냐 라고 생각할 수도 있습니다만,  
-`한번만 코드를 작성하고 OS에 맞는 JVM 각각설치하기` vs `OS마다 코드 작성하기`를 생각해본다면 전자가 더 효율적이다고 볼 수 있는 것이죠.
+> ### bootJar와 jar는 무엇이 다를까요?
+> `bootJar`는 `spring-boot`에서 제공하는 `jar`파일로, `jar`파일을 실행할 수 있는 기능을 제공합니다. <br/>
+내부에 코드, 라이브러리 'jar', 실행 가능한 bootloader를 포함하고 있어서 `java -jar`로 바로 실행이
+> 가능합니다. <br/>
+> 그러면 굳이 `jar`를 만들 필요가 없지 않냐고 물어보실 수 있습니다. <br/>
+`spring-boot`를 사용하지 않는 경우에 당연히 사용되고, D1 프로젝트와 같은 멀티모듈 구조일 경우,
+> core 모듈을 제외한 공통모듈등에는 `jar`만 사용하고 실행진입점인 `core`모듈에만 `bootJar`를 사용합니다. <br/>
+> 왜냐하면 실행을 위한 `core`모듈이 아니면 굳이 실행가능한 bootJar로 패키징할 필요가 없기 때문입니다.
+
+### 5. assemble
+`jar`와 `bootjar`등을 내부적으로 실행해서 산출물을 만들어냅니다.
+test없이 컴파일 및 리소스처리후 바로 실행파일만 만들어낼 수 있는 장점이 있습니다.<br/>
+앞의 단계 compileJava, processResources, classes, jar나 bootJar를 포함하고 있어서 앞단계에서 실행이 되지 않았을 경우
+ 재실행하거나 건너뜁니다.
+
+### 6. compileTestJava
+
+1번째 단계와 비슷하게 jdk 컴파일러로 `test` 소스코드를 컴파일합니다. <br/>
+
+### 7. processTestResources
+2번째 단계와 유사하게 `test` 리소스 파일을 `build/resources/test` 디렉토리에 복사합니다. <br/>
+
+### 8. testClasses
+3번째 단계와 유사하게 `compileTestJava`와 `processTestResources`를 진행하고 두 단계가 성공하면 완료처리만 진행합니다. <br/>
+
+### 9. test
+
+`test` 소스코드에 대한 테스트를 진행합니다. <br/>
+`Junit`이나 `TestNG`등 프레임워크를 사용해서 단위테스트를 실행합니다. <br/>
+`test`실패시 `build`가 실패합니다. <br/>
+
+### 10. check
+`test`를 포함한 모든 검증을 진행합니다. <br/>
+
+### 11. build
+앞선  프로젝트의 전체 `build`를 진행하는 집계작업입니다. <br/>
+크게 `assemble`, `check` 2개의 핵심 tak를 포함하고 있습니다. <br/>
 
 
-```mermaid
-graph TD;
-    Java_Source[Java Source Code] -->|Compile to Bytecode| Java_Bytecode[Java Bytecode]
-    Java_Bytecode -->|Run on JVM| JVM_Windows[JVM on Windows]
-    Java_Bytecode -->|Run on JVM| JVM_Linux[JVM on Linux]
-    Java_Bytecode -->|Run on JVM| JVM_macOS[JVM on macOS]
+전체적인 다이어그램을 보자면 아래와 같이 볼 수 있습니다.
 
-    subgraph Windows
-        JVM_Windows --> Windows_OS[Windows OS]
-    end
-
-    subgraph Linux
-        JVM_Linux --> Linux_OS[Linux OS]
-    end
-
-    subgraph macOS
-        JVM_macOS --> macOS_OS[macOS]
-    end
-
-```
-
-### JVM 동작 과정
-![예시코드](img/예시코드.png)
->    1. 자바 컴파일러가 자바로 작성된 파일을 `자바 바이트 코드` (JVM이 이해할 수 있는 코드)로 컴파일합니다.
-![javac](img/javac명령.png)
-![class생성](img/class생성.png)
-
-> 2. JVM은 이 바이트 코드를 `기계어`(바이너리 코드)로 변환합니다.
-
-> 3. jvm에 의해 컴파일된 기계어는 OS별 CPU에서 실행되어 사용자에게 서비스를 제공해줍니다.
-![실행](img/실행.png)
-
-     
-
-# 3. JVM의 구조는 어떻게 되어있을까요?
-
-`JVM`의 구조는 `java` 버전이 변경되면서 변화해왔습니다.  
-우선 가장 기본적인 `java 7`에서의 `JVM` 구조를 알아보겠습니다.
-
-![jvm 기본구조](img/jvm 기본구조.png)
-
-### 구성
-1. 클래스 로더(`Class Loader`)
-2. 실행 엔진(`Execution Engine`)
-   - 인터프리터
-   - `JIT` 컴파일러
-   - 가비지 컬렉터
-3. 런타임 데이터 영역(`Runtime Data Area`)
-    - 메서드 영역(`Method Area`)
-    - 힙 영역(`Heap Area`)
-    - 스택 영역(`Stack Area`)
-    - `PC Register`
-    - 네이티브 메서드 영역(`Native Method Stack`)
-
-
-
-## 3-2. 실행 엔진
-## 3-2-1. 인터프리터
-자바 바이트 코드를 한줄씩 읽고 한줄씩 기계어로 해석하는 역할을 합니다.
-
-> 📝 인터프리터 vs 컴파일러 차이점
-> 
->| 구분        | **인터프리터 (Interpreter)** | **컴파일러 (Compiler)**         |
->|------------|-------------------------|-----------------------------|
->| **실행 방식** | 한 줄씩 해석하며 즉시 실행됩니다.     | 전체 코드를 한 번에 기계어로 변환 후 실행합니다 |
->| **속도**    | 시작은 빠르지만 실행 속도는 느립니다.   | 시작은 느리지만 실행 속도가 빠릅니다.       |
->| **오류 처리** | 오류 발생 시 즉시 중단 후 알려줍니다.  | 모든 코드 분석 후 오류를 한 번에 알려줍니다.  |
-> 📌 정리
->- **인터프리터**: 실행 속도보다 **빠른 실행 시작**이 중요할 때 사용합니다.
->- **컴파일러**: 실행 속도를 높이고 싶을 때 사용합니다.
->- **Java**는 **JVM에서 인터프리터 + JIT 컴파일러**를 함께 사용하여 장점을 조합합니다.
-
-> ### 왜 JVM에서는 굳이 인터프리터를 사용했을까요?
-> 1. java는 `wora(Write Once, Run Anywhere)`라는 플랫폼에 독립적으로 동작하려는 패러다임을 가지고 있습니다. 이때 인터프리터를 사용하면 플랫폼에 독립적인 장점을 가져갈 수 있습니다. 
-> 2. 한줄씩 실행하므로 메모리 사용량이 적습니다.
-
-
-## 3-2-2. JIT 컴파일러
-* 실행중에 **자바 바이트 코드**를 **네이티브 코드**로 변환하여 성능을 최적화하는 기술입니다.  
-* 프로그램의 실행패턴을 분석해서 **자주 실행되는 메서드**(`HotSpot`)을 중심으로 최적화합니다.  
-* 처음 호출되었을 때는 바로 컴파일 되지는 않고, 호출 횟수를 체크하여 컴파일합니다.
-그 후, 동일한 메서드가 컴파일되면 이 컴파일된 메서드를 해석하지 않고 네이티브코드 그대로 실행되도록 하여 성능을 최적화합니다.
-
-> ### 왜 사용했을까요?
-> 인터프리터는 처음 실행되는 속도는 빠르지만, 이후 동작할때 동일한 메서드들을 계속 호출하므로 느립니다.  
-> 그에 반해 동적컴파일을 진행하는 JIT는 반복되는 코드를 읽지 않고 바로 사용할 수 있어 성능을 높일 수 있습니다.  
-> 즉, **느린** 성능을 가진 인터프리터의 단점을 보완함으로써 인터프리터의 빠른 초기 실행속도와 JIT 컴파일러의 성능의
-> 이점을 동시에 가져가는 것이죠.
-
-## 3-2-3. 가비지 컬렉터
-아마 많이 보셨을 가비지 컬렉터(GC)입니다. Heap 영역에서 사용되지 않는 메모리를 회수해주는 역할을 합니다.  
-C언어와는 다르게 메모리 관리에 신경쓰지 않아도 되는 장점이 있습니다.  
-종류로는 아래와 같이 있습니다. 해당 내용은 방대하기 때문에 이 글에서는 종류만 정리해 볼게요.  
-
-
-
-
-### 3-3-1. method 영역(class영역 또는 static영역)
- jvm시작시 자바 바이트 코드(.class)가 클래스 로딩되는 곳입니다.  
-jvm 동작후 적재가 되면 프로그램 종료시까지 저장됩니다.  
-클래스에 대한 모든 정보가 저장된다고 생각하면 됩니다.
-#### 저장되는 정보
-```java
-class Car {
-    static int count = 0; // 정적 변수
-    final int MAX_SPEED = 200; // 상수
-    String model; // 인스턴스 변수
-
-    // 생성자
-    public Car(String model) {
-        this.model = model;
-        count++; // 생성될 때마다 count 증가
-    }
-
-    public void drive() { // 메서드
-        System.out.println("Driving " + model + " at max speed: " + MAX_SPEED);
-    }
-
-    public static void startEngine() { // 정적 메서드
-        System.out.println("Engine started");
-    }
-}
-```
-1. 메서드 코드 : Car(), drive(), startEngine()의 바이트 코드가 저장됩니다.
-2. 인스턴스 변수 : model의 이름, 접근제어자, 데이터 타입등이 저장됩니다.
-3. 클래스 : Car의 메타데이터도 저장됩니다.(이름, 상속관계, 인터페이스 정보)
-#### 3-3-1-1. runtime constant pool 영역
-메서드 영역 내부에 있는 데이터 영역입니다. 클래스나 인터페이스별로 자신만의 runtime constant pool
-영역을 가집니다.  
-클래스에서 사용되는 상수, 리터럴, 메서드/필드 참조들을 저장합니다.
-
-> ## *Constant pool*, *Runtime Constant pool*, *String Constant pool*의 차이는?
-> 
-> ### String Constant pool
-> heap영역의 문자열 리터럴을 저장하는 공간이고, GC의 대상이 되지는 않습니다.  
-> String은 불변객체여서 문자열 생성시에 이 공간에 저장된 리터럴을 재사용할 수 있습니다.  
-> -  소스코드에 문자열 선언
-```java 
-String str = "hello"; // String constant pool 저장
-String ss = new String("hello"); // new로 생성해서 heap에 저장
-```
-> ### Constant pool
-> 컴파일시 클래스 파일 내부에 존재합니다.  
-> 클래스 로더를 통해 메모리에 로드됩니다.  
-> 상수, 문자열, 클래스/인터페이스 참조를 가지고 있습니다.
-> 
-> ### Runtime constant pool 
-> 쉽게 생각해서 Constant pool에 저장되어 있던 상수나 메서드, 클래스등이 저장됩니다.  
-> method 영역에 저장되며, 문자열 리터럴은 String Constant pool에 저장됩니다.  
-
-
-
-
-
+![gradle 흐름도](img/build흐름도.png)
 
 
 # 4. Outro
@@ -280,6 +155,7 @@ reference
 - https://ggop-n.tistory.com/41
 - https://shin-e-dog.tistory.com/75
 - https://everyday-develop-myself.tistory.com/300
+- https://docs.gradle.org/current/userguide/java_plugin.html?utm_source=chatgpt.com
 ---
 
 [//]: # ()
