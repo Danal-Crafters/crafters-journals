@@ -384,7 +384,10 @@ MySQL, PostgreSQL, Oracle, SQL Server 등 각각의 DBMS 에 따라 기본 값 I
 | **Checked Exception**   | 커밋    | `Exception`, `IOException` 등 발생 시 커밋 진행   |
 | **Error**               | 롤백 안됨 | 시스템 에러 (`OutOfMemoryError`)는 롤백되지 않음    |
 
-> 💡여기서 잠깐! Unchecked / Checked Exception 의 차이가 뭔가요?
+> 💡여기서 잠깐! Unchecked / Checked Exception 의 차이가 뭔가요?  
+> 컴파일러가 예외 처리 여부를 검사하는 지 여부에 따라 나뉩니다.
+> Unchecked Exceptoin 은 대표적으로 `NullPointerException`, `ArrayIndexOutOfBoundsException`, `ArthmeticException`이 있고, Checked Exception 은 `IOException`, `SQLException`, `ClassNotFoundException` 이 있습니다.  
+> 소프트웨어의 안정성에 따라 나뉩니다. Unchecked Exception 은 보통은 프로그래머의 실수에 의해 많이 발생하죠.
 
 RollbackFor 옵션은 명시적으로 특정한 예외가 발생하는 경우 롤백할 수 있도록 설정합니다.
 
