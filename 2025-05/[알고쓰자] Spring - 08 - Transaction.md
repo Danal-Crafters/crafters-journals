@@ -524,7 +524,7 @@ interface UserRepository : CrudRepository<User, Long> {
 
 간단한 예시를 하나 보겠습니다. 실제 로직 테스트 코드를 작성할 때 Transaction 이 정상적으로 롤백되는 지 확인하는 예시들을 작성 해 보겠습니다.
 
-```kotest
+```kotlin
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.assertions.throwables.shouldThrow
