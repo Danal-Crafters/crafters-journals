@@ -31,7 +31,7 @@ proxyFactory.addAdvisor(advisor)
 
 @Transactional 어노테이션을 사용하게 된다면 해당 메소드 시작 시 Transaction 을 시작하고, 성공 시 커밋, 실패 시 롤백합니다. 기본적으로 Runtime Exception 이 발생한다면 롤백하게 됩니다.
 
-```
+```kotlin
 @Transactional
 public void processOrder(Order order) {
     orderRepository.save(order);
