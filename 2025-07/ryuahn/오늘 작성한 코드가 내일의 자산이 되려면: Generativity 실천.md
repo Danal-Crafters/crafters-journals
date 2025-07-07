@@ -50,18 +50,70 @@ Generativity를 실천하면 조직의 회복탄력성(Resilience)이 향상됩�
 - 신규 구성원이 빠르게 업무를 이해하고 온보딩합니다
 - 유지보수 비용이 줄어들어, 더 많은 시간을 신규 기능 개발에 투자할 수 있습니다
 
+#### 📈 회복탄력성 향상 사례
 
-단순히 예외 처리나 시스템 이중화가 아니라,
+```java
+// Before: 개인 지식에 의존하는 코드
+public class SettlementService {
+    // 복잡한 로직이 주석 없이 작성됨
+    public void processSettlement(String merchantId, LocalDate targetDate) {
+        ...
+    }
+}
+
+// After: 팀이 이해할 수 있는 코드
+public class SettlementService {
+    
+    /**
+     * 일일 정산 처리
+     * 1. 정산 대상 거래 조회 (승인완료, 취소)
+     * 2. 수수료 계산 (가맹점별 차등 적용)
+     * 3. 정산 금액 산출 (매출 - 수수료 - 세금)
+     * 4. 정산 데이터 생성 및 저장
+     */
+    public SettlementResult processDailySettlement(String merchantId, LocalDate targetDate) {
+        // 1단계: 정산 대상 거래 조회
+        List<Transaction> transactions = getSettlementTargetTransactions(merchantId, targetDate);
+        
+        // 2단계: 수수료 계산
+        BigDecimal feeAmount = calculateFeeAmount(transactions, merchantId);
+        
+        // 3단계: 정산 금액 산출
+        BigDecimal settlementAmount = calculateSettlementAmount(transactions, feeAmount);
+        
+        // 4단계: 정산 데이터 생성 및 저장
+        SettlementData settlementData = createAndSaveSettlementData(merchantId, targetDate, 
+                                                                    transactions, feeAmount, settlementAmount);
+        
+        return SettlementResult.success(settlementData);
+    }
+    
+    // 각 단계별 메서드 분리로 가독성 향상
+    private List<Transaction> getSettlementTargetTransactions(String merchantId, LocalDate date) { ... }
+    private BigDecimal calculateFeeAmount(List<Transaction> transactions, String merchantId) { ... }
+    private BigDecimal calculateSettlementAmount(List<Transaction> transactions, BigDecimal feeAmount) { ... }
+    private SettlementData createAndSaveSettlementData(String merchantId, LocalDate date, 
+                                                       List<Transaction> transactions, 
+                                                       BigDecimal feeAmount, BigDecimal settlementAmount) { ... }
+}
+```
+
+단순히 예외 처리나 시스템 이중화가 아니라, <br>
 팀이 스스로 학습하며 변화와 장애에 유연하게 대응하는 환경을 만드는 것이 핵심입니다.
 
 <br>
 <br>
 
-```
-🤔 잠깐!
+---
+**🤔 잠깐!**
+
 여기까지 읽으면서 "이거 회사만 좋은 거 아니야?" 라고 생각하셨나요?  
-사실 Generativity의 진짜 매력은 개인의 성장에 있습니다.
-```
+
+사실 Generativity의 진짜 매력은 **개인의 성장**에 있습니다.
+
+---
+
+<br>
 
 
 ## 🚀  Generativity가 개인에게 주는 이점
@@ -87,16 +139,52 @@ Generativity 실천을 위해 다음과 같은 행동들을 고려해볼 수 있
 > ```
 
 > - [ ]  **맥락 공유**: 코드 리뷰 시 맥락과 배경을 자세히 공유합니다
-> ```
-> // PR 설명에 "왜" 변경했는지 추가
-> "성능 개선을 위해 캐시 적용 → 응답속도 200ms → 50ms 단축"
-> ```
 
-> - [ ]  **지식 나눔**: 페어 프로그래밍, 멘토링 등을 통해 적극적으로 지식을 나눕니다
-> ```bash
-> # 팀 공유용 개발환경 스크립트
-> ./setup.sh  # 5분 안에 로컬 환경 구축 완료
-> ```
+```java
+// 왜 이렇게 구현했는지 배경 설명
+private void validateMerchantStatus(String merchantId) {
+    // 2024.01.15 - 정산 오류 이슈로 인해 추가
+    // 휴면 상태 가맹점의 경우 정산 대상에서 제외 필요
+    // 관련 이슈: JIRA-1234
+    if (merchant.getStatus() == MerchantStatus.DORMANT) {
+        throw new SettlementException("휴면 가맹점은 정산 불가");
+    }
+}
+```
+
+> - [ ]  **지식 나눔**: 페어 프로그래밍, 멘토링을 통해 적극적으로 지식을 나눕니다
+
+```java
+// 페어 프로그래밍 중: 신입 개발자와 함께 코딩 예시
+
+// 멘토: "결제 금액 계산할 때 왜 BigDecimal을 쓸까요?"
+
+	@Test
+	void double_소수점_정확도_테스트() {
+		// double 사용 시 문제점
+		double amount = 100.1 - 100.0;
+
+		System.out.println("amount: " + amount); // 0.1
+
+		Assertions.assertEquals(0.1, amount); //실패
+	}
+
+// 멘토: "왜 실패했을까요?"
+// 멘티: "어? 0.1이 아니네요..."
+
+	@Test
+	void BigDecimal_소수점_정확도_테스트() {
+		// BigDecimal 사용 시
+		BigDecimal preciseAmount = new BigDecimal("100.1")
+				.subtract(new BigDecimal("100.0"));
+		System.out.println("preciseAmount: " + preciseAmount); // 0.1
+		
+		Assertions.assertEquals(new BigDecimal("0.1"), preciseAmount); //성공
+	}
+
+// "PG사에서 1원 차이도 큰 문제가 될 수 있음을 프로그래밍 통해 공유"
+
+```
 
 > - [ ]  **학습 촉진**: 조직 내 회고와 피드백을 자주 수행하여 팀 학습을 촉진합니다
 
