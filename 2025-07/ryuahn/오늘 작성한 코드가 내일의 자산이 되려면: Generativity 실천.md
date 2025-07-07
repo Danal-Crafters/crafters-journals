@@ -7,7 +7,7 @@
 Generativity는 지금 하는 작업이 미래의 팀과 조직에 긍정적 영향을 미치는지로 생산성을 판단하는 개념입니다. <br>
 
 교육 후 원글을 찾아 읽으며, 우리 팀에 어떻게 기여할 수 있을지 고민해보았습니다. <br>
-이 글은 그 고민의 결과물입니다.
+이 글은 그 고민을 정리한 내용입니다.
 
  <br>
 
@@ -79,22 +79,10 @@ public class SettlementService {
         BigDecimal feeAmount = calculateFeeAmount(transactions, merchantId);
         
         // 3단계: 정산 금액 산출
-        BigDecimal settlementAmount = calculateSettlementAmount(transactions, feeAmount);
-        
         // 4단계: 정산 데이터 생성 및 저장
-        SettlementData settlementData = createAndSaveSettlementData(merchantId, targetDate, 
-                                                                    transactions, feeAmount, settlementAmount);
-        
-        return SettlementResult.success(settlementData);
+      	....
     }
-    
-    // 각 단계별 메서드 분리로 가독성 향상
-    private List<Transaction> getSettlementTargetTransactions(String merchantId, LocalDate date) { ... }
-    private BigDecimal calculateFeeAmount(List<Transaction> transactions, String merchantId) { ... }
-    private BigDecimal calculateSettlementAmount(List<Transaction> transactions, BigDecimal feeAmount) { ... }
-    private SettlementData createAndSaveSettlementData(String merchantId, LocalDate date, 
-                                                       List<Transaction> transactions, 
-                                                       BigDecimal feeAmount, BigDecimal settlementAmount) { ... }
+
 }
 ```
 
@@ -107,7 +95,7 @@ public class SettlementService {
 ---
 **🤔 잠깐!**
 
-![심각한곰돌이푸](./심각한곰돌이푸.png)
+<img src="./serious-pooh.png" alt="심각한곰돌이푸" width="250">
 
 여기까지 읽으면서 "이거 회사만 좋은 거 아니야?" 라고 생각하셨나요?  
 
@@ -140,6 +128,8 @@ Generativity 실천을 위해 다음과 같은 행동들을 고려해볼 수 있
 > // After: List<User> activeUsers = getActiveUsers(); // 활성 상태인 사용자만 조회
 > ```
 
+<br>
+
 > - [ ]  **맥락 공유**: 코드 리뷰 시 맥락과 배경을 자세히 공유합니다
 
 ```java
@@ -153,6 +143,8 @@ private void validateMerchantStatus(String merchantId) {
     }
 }
 ```
+
+<br>
 
 > - [ ]  **지식 나눔**: 페어 프로그래밍, 멘토링을 통해 적극적으로 지식을 나눕니다
 
@@ -187,6 +179,8 @@ private void validateMerchantStatus(String merchantId) {
 // "PG사에서 1원 차이도 큰 문제가 될 수 있음을 프로그래밍 통해 공유"
 
 ```
+
+<br>
 
 > - [ ]  **학습 촉진**: 조직 내 회고와 피드백을 자주 수행하여 팀 학습을 촉진합니다
 
