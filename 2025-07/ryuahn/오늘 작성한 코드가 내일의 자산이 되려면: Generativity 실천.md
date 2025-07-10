@@ -1,4 +1,4 @@
-# 🌱 오늘 작성한 코드가 내일의 자산이 되려면: Generativity 실천
+# 🌱 오늘 작성한 코드가 내일의 자산이 되려면 - Generativity 실천
 
 개인적으로 받은 교육에서 인상 깊었던 개념이 있습니다. Jessica Kerr의 "Generativity" 개념이었습니다.
 
